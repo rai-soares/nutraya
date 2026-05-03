@@ -80,6 +80,8 @@ Development should follow this order unless a specific implementation need justi
 - When `AGENTS.md` and a rule file differ in detail, the specific rule file takes precedence.
 - Prefer module-oriented decisions over technical convenience.
 - Every new implementation choice should preserve the MVP scope defined here.
+- Every new backend or frontend behavior must ship with unit tests in the same change.
+- Changes are not complete until the relevant automated tests are updated and passing.
 
 ## Rule Index
 

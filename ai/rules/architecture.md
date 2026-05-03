@@ -71,3 +71,9 @@ When there are multiple valid implementation options, prefer the one that:
 - reduces setup and maintenance cost
 - is easy for future contributors to understand
 - does not expand the MVP scope
+
+## Quality Gate
+
+- new behavior must be accompanied by automated tests at the module boundary where the behavior lives
+- tests should stay close to the domain they protect and remain easy to understand
+- implementation convenience is not a reason to skip regression coverage

@@ -65,6 +65,13 @@ Each domain should expose only the minimum operations needed for the MVP flows.
 
 Lightweight implementations are welcome, but domain behavior still needs explicit ownership.
 
+## Testing Rule
+
+- every new backend module, service, route handler, and validation schema must include unit tests
+- tests must cover both success paths and the main failure paths
+- bug fixes must add or update tests that protect against regression
+- backend work is not complete until the relevant automated tests are passing
+
 ## Delivery Rule
 
 Implement synchronous, easy-to-debug flows first.
