@@ -5,11 +5,17 @@
 Frontend implementation must use:
 
 - React
+- Tailwind CSS
 - MUI
 - React Query
 - React Hook Form
 
 Next.js is the application framework and delivery shell for the frontend.
+
+Tailwind CSS and MUI must coexist with distinct responsibilities:
+
+- Tailwind CSS for layout, spacing, responsive behavior, sizing, and page-level composition
+- MUI for base components, form elements, states, overlays, and accessible interaction primitives
 
 ## Product Requirement
 
@@ -55,8 +61,11 @@ Patient home should always prioritize:
 ## Component Strategy
 
 - Prefer MUI primitives and composable patterns over custom design systems in the MVP.
+- Prefer Tailwind utility classes for layout and visual composition around components.
 - Build custom components only when they reduce repetition in real product flows.
 - Avoid generic abstraction layers that are not yet justified by repeated usage.
+
+Avoid style conflicts by not duplicating responsibilities between Tailwind and MUI in the same decision space when a clear owner already exists.
 
 ## Data and Forms
 

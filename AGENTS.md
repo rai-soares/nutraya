@@ -19,6 +19,7 @@ The official architecture for the initial MVP is:
 
 - Next.js fullstack
 - React
+- Tailwind CSS
 - MUI
 - React Query
 - React Hook Form
@@ -28,6 +29,11 @@ The official architecture for the initial MVP is:
 Auth must be implemented in a way that preserves MVP simplicity. The implementation may use JWT directly or a managed provider later, but current project decisions must not depend on a specific vendor.
 
 Storage and AI providers are integration points, not fixed platform commitments at this stage.
+
+Frontend styling should combine Tailwind CSS and MUI with clear responsibilities:
+
+- Tailwind CSS for layout, spacing, responsive composition, and utility styling
+- MUI for accessible UI primitives, form controls, feedback components, and interaction patterns
 
 ## MVP Principles
 
