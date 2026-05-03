@@ -1,5 +1,4 @@
-import { hash } from "bcryptjs";
-
+import { hashPassword } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 
 import type { CreateUserInput, UserDto } from "./user.types";
@@ -13,7 +12,7 @@ const userSelect = {
 } as const;
 
 export async function createUser(input: CreateUserInput): Promise<UserDto> {
-  const password = await hash(input.password, 10);
+  const password = await hashPassword(input.password);
 
   return prisma.user.create({
     data: {

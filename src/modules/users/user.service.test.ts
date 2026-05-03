@@ -3,26 +3,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prismaMock, resetPrismaMock } from "@/test/prisma.mock";
 
-vi.mock("bcryptjs", () => ({
-  hash: vi.fn(),
+const { hashPasswordMock } = vi.hoisted(() => ({
+  hashPasswordMock: vi.fn(),
+}));
+
+vi.mock("@/lib/crypto", () => ({
+  hashPassword: hashPasswordMock,
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
 }));
 
-import { hash } from "bcryptjs";
-
 import { createUser, listUsers } from "@/modules/users/user.service";
 
 describe("user service", () => {
   beforeEach(() => {
     resetPrismaMock();
-    vi.mocked(hash).mockReset();
+    hashPasswordMock.mockReset();
   });
 
   it("hashes the password before creating the user", async () => {
-    vi.mocked(hash).mockResolvedValue("hashed-password");
+    hashPasswordMock.mockResolvedValue("hashed-password");
     prismaMock.user.create.mockResolvedValue({
       id: "user-1",
       name: "Ana",
@@ -38,7 +40,7 @@ describe("user service", () => {
       role: UserRole.PATIENT,
     });
 
-    expect(hash).toHaveBeenCalledWith("123456", 10);
+    expect(hashPasswordMock).toHaveBeenCalledWith("123456");
     expect(prismaMock.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

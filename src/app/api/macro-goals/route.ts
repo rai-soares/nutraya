@@ -1,9 +1,13 @@
+import { requireAuth, requireRole } from "@/lib/auth";
 import { handleRouteError, jsonResponse } from "@/lib/http";
 import { createMacroGoal } from "@/modules/macro-goals/macro-goal.service";
 import { createMacroGoalSchema } from "@/modules/macro-goals/macro-goal.types";
 
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth(request);
+    requireRole(user, "NUTRI");
+
     const body = await request.json();
     const input = createMacroGoalSchema.parse(body);
     const goal = await createMacroGoal(input);
