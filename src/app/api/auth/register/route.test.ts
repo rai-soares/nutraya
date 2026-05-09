@@ -26,7 +26,7 @@ describe("/api/auth/register route", () => {
       id: "user-1",
       name: "Ana",
       email: "ana@mail.com",
-      role: "PATIENT",
+      role: "NUTRI",
       createdAt: "2026-05-03T00:00:00.000Z",
     });
     generateTokenMock.mockResolvedValue("jwt-token");
@@ -37,7 +37,6 @@ describe("/api/auth/register route", () => {
         name: "Ana",
         email: "ana@mail.com",
         password: "123456",
-        role: "PATIENT",
       }),
       headers: { "Content-Type": "application/json" },
     });
@@ -45,12 +44,18 @@ describe("/api/auth/register route", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(201);
+    expect(createUserMock).toHaveBeenCalledWith({
+      name: "Ana",
+      email: "ana@mail.com",
+      password: "123456",
+      role: "NUTRI",
+    });
     const body = await response.json();
     expect(body.token).toBe("jwt-token");
     expect(body.user).toMatchObject({ id: "user-1", email: "ana@mail.com" });
     expect(generateTokenMock).toHaveBeenCalledWith({
       userId: "user-1",
-      role: "PATIENT",
+      role: "NUTRI",
     });
   });
 
@@ -61,7 +66,6 @@ describe("/api/auth/register route", () => {
         name: "",
         email: "invalid",
         password: "123",
-        role: "PATIENT",
       }),
       headers: { "Content-Type": "application/json" },
     });
@@ -96,5 +100,37 @@ describe("/api/auth/register route", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(409);
+  });
+
+  it("ignores a patient role sent by the client and still creates a nutritionist", async () => {
+    createUserMock.mockResolvedValue({
+      id: "user-1",
+      name: "Ana",
+      email: "ana@mail.com",
+      role: "NUTRI",
+      createdAt: "2026-05-03T00:00:00.000Z",
+    });
+    generateTokenMock.mockResolvedValue("jwt-token");
+
+    const request = new Request("http://localhost/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Ana",
+        email: "ana@mail.com",
+        password: "123456",
+        role: "PATIENT",
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(201);
+    expect(createUserMock).toHaveBeenCalledWith({
+      name: "Ana",
+      email: "ana@mail.com",
+      password: "123456",
+      role: "NUTRI",
+    });
   });
 });

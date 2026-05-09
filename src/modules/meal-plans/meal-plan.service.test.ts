@@ -79,6 +79,7 @@ describe("meal plan service", () => {
       createMealPlan("nutri-1", {
         patientId: "patient-1",
         title: "Plan A",
+        isActive: false,
       }),
     ).rejects.toMatchObject({
       message: "Patient is not linked to this nutritionist.",

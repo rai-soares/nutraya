@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createMacroGoalMock, requireAuthMock, requireRoleMock } = vi.hoisted(
+const {
+  assertNutritionistCanAccessPatientMock,
+  createMacroGoalMock,
+  requireAuthMock,
+  requireRoleMock,
+} = vi.hoisted(
   () => ({
+    assertNutritionistCanAccessPatientMock: vi.fn(),
     createMacroGoalMock: vi.fn(),
     requireAuthMock: vi.fn(),
     requireRoleMock: vi.fn(),
@@ -17,11 +23,16 @@ vi.mock("@/lib/auth", () => ({
   requireRole: requireRoleMock,
 }));
 
+vi.mock("@/modules/patient-profile/patient-profile.service", () => ({
+  assertNutritionistCanAccessPatient: assertNutritionistCanAccessPatientMock,
+}));
+
 import { AppError } from "@/lib/errors";
 import { POST } from "@/app/api/macro-goals/route";
 
 describe("/api/macro-goals route", () => {
   beforeEach(() => {
+    assertNutritionistCanAccessPatientMock.mockReset();
     createMacroGoalMock.mockReset();
     requireAuthMock.mockReset();
     requireRoleMock.mockReset();
@@ -55,6 +66,10 @@ describe("/api/macro-goals route", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(201);
+    expect(assertNutritionistCanAccessPatientMock).toHaveBeenCalledWith(
+      "nutri-1",
+      "patient-1",
+    );
     await expect(response.json()).resolves.toMatchObject({
       id: "goal-1",
       patientId: "patient-1",

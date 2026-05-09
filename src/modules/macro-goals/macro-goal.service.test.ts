@@ -10,6 +10,7 @@ vi.mock("@/lib/prisma", () => ({
 import {
   createMacroGoal,
   getMacroGoalByPatientId,
+  updateMacroGoal,
 } from "@/modules/macro-goals/macro-goal.service";
 
 describe("macro goal service", () => {
@@ -148,6 +149,70 @@ describe("macro goal service", () => {
     prismaMock.macroGoal.findUnique.mockResolvedValue(null);
 
     await expect(getMacroGoalByPatientId("patient-1")).rejects.toMatchObject({
+      message: "Macro goal not found.",
+      statusCode: 404,
+    });
+  });
+
+  it("updates an existing macro goal", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValueOnce({
+      id: "goal-1",
+    });
+    prismaMock.macroGoal.update.mockResolvedValue({
+      id: "goal-1",
+      patientId: "patient-1",
+      calories: 2100,
+      protein: 130,
+      carbs: 230,
+      fat: 65,
+    });
+
+    const result = await updateMacroGoal("patient-1", {
+      calories: 2100,
+      protein: 130,
+      carbs: 230,
+      fat: 65,
+    });
+
+    expect(prismaMock.macroGoal.update).toHaveBeenCalledWith({
+      where: { patientId: "patient-1" },
+      data: {
+        calories: 2100,
+        protein: 130,
+        carbs: 230,
+        fat: 65,
+      },
+      select: {
+        id: true,
+        patientId: true,
+        calories: true,
+        protein: true,
+        carbs: true,
+        fat: true,
+      },
+    });
+    expect(result.calories).toBe(2100);
+  });
+
+  it("fails to update when the macro goal does not exist", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValue(null);
+
+    await expect(
+      updateMacroGoal("patient-1", {
+        calories: 2100,
+        protein: 130,
+        carbs: 230,
+        fat: 65,
+      }),
+    ).rejects.toMatchObject({
       message: "Macro goal not found.",
       statusCode: 404,
     });

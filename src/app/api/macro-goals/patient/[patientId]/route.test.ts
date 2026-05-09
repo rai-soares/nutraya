@@ -1,25 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getMacroGoalByPatientIdMock, requireAuthMock } = vi.hoisted(() => ({
+const {
+  assertNutritionistCanAccessPatientMock,
+  getMacroGoalByPatientIdMock,
+  requireAuthMock,
+  updateMacroGoalMock,
+} = vi.hoisted(() => ({
+  assertNutritionistCanAccessPatientMock: vi.fn(),
   getMacroGoalByPatientIdMock: vi.fn(),
   requireAuthMock: vi.fn(),
+  updateMacroGoalMock: vi.fn(),
 }));
 
 vi.mock("@/modules/macro-goals/macro-goal.service", () => ({
   getMacroGoalByPatientId: getMacroGoalByPatientIdMock,
+  updateMacroGoal: updateMacroGoalMock,
 }));
 
 vi.mock("@/lib/auth", () => ({
   requireAuth: requireAuthMock,
 }));
 
+vi.mock("@/modules/patient-profile/patient-profile.service", () => ({
+  assertNutritionistCanAccessPatient: assertNutritionistCanAccessPatientMock,
+}));
+
 import { AppError } from "@/lib/errors";
-import { GET } from "@/app/api/macro-goals/patient/[patientId]/route";
+import { GET, PATCH } from "@/app/api/macro-goals/patient/[patientId]/route";
 
 describe("/api/macro-goals/patient/[patientId] route", () => {
   beforeEach(() => {
+    assertNutritionistCanAccessPatientMock.mockReset();
     getMacroGoalByPatientIdMock.mockReset();
     requireAuthMock.mockReset();
+    updateMacroGoalMock.mockReset();
     requireAuthMock.mockResolvedValue({ userId: "nutri-1", role: "NUTRI" });
   });
 
@@ -37,6 +51,10 @@ describe("/api/macro-goals/patient/[patientId] route", () => {
       params: Promise.resolve({ patientId: "patient-1" }),
     });
 
+    expect(assertNutritionistCanAccessPatientMock).toHaveBeenCalledWith(
+      "nutri-1",
+      "patient-1",
+    );
     expect(getMacroGoalByPatientIdMock).toHaveBeenCalledWith("patient-1");
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
@@ -88,6 +106,7 @@ describe("/api/macro-goals/patient/[patientId] route", () => {
     });
 
     expect(response.status).toBe(200);
+    expect(assertNutritionistCanAccessPatientMock).not.toHaveBeenCalled();
   });
 
   it("returns 403 when a patient tries to view another patient's macro goal", async () => {
@@ -99,5 +118,67 @@ describe("/api/macro-goals/patient/[patientId] route", () => {
 
     expect(response.status).toBe(403);
     expect(getMacroGoalByPatientIdMock).not.toHaveBeenCalled();
+  });
+
+  it("updates a linked patient's macro goal", async () => {
+    updateMacroGoalMock.mockResolvedValue({
+      id: "goal-1",
+      patientId: "patient-1",
+      calories: 2100,
+      protein: 130,
+      carbs: 230,
+      fat: 65,
+    });
+
+    const response = await PATCH(
+      new Request("http://localhost", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calories: 2100,
+          protein: 130,
+          carbs: 230,
+          fat: 65,
+        }),
+      }),
+      {
+        params: Promise.resolve({ patientId: "patient-1" }),
+      },
+    );
+
+    expect(assertNutritionistCanAccessPatientMock).toHaveBeenCalledWith(
+      "nutri-1",
+      "patient-1",
+    );
+    expect(updateMacroGoalMock).toHaveBeenCalledWith("patient-1", {
+      calories: 2100,
+      protein: 130,
+      carbs: 230,
+      fat: 65,
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it("blocks patients from updating macro goals", async () => {
+    requireAuthMock.mockResolvedValue({ userId: "patient-1", role: "PATIENT" });
+
+    const response = await PATCH(
+      new Request("http://localhost", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calories: 2100,
+          protein: 130,
+          carbs: 230,
+          fat: 65,
+        }),
+      }),
+      {
+        params: Promise.resolve({ patientId: "patient-1" }),
+      },
+    );
+
+    expect(response.status).toBe(403);
+    expect(updateMacroGoalMock).not.toHaveBeenCalled();
   });
 });

@@ -8,7 +8,15 @@ export const createMacroGoalSchema = z.object({
   fat: z.number().int().nonnegative(),
 });
 
+export const updateMacroGoalSchema = z.object({
+  calories: z.number().int().nonnegative(),
+  protein: z.number().int().nonnegative(),
+  carbs: z.number().int().nonnegative(),
+  fat: z.number().int().nonnegative(),
+});
+
 export type CreateMacroGoalInput = z.infer<typeof createMacroGoalSchema>;
+export type UpdateMacroGoalInput = z.infer<typeof updateMacroGoalSchema>;
 
 export type MacroGoalDto = {
   id: string;

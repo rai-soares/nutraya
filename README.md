@@ -1,20 +1,28 @@
-# Nutraya Backend Foundation
+# Nutraya MVP Foundation
 
-Initial backend foundation for the Nutraya MVP using Next.js, Prisma, and PostgreSQL.
+Nutraya is a Next.js fullstack MVP for nutrition follow-up between nutritionists and patients.
 
-## Available API routes
+This repository now includes:
 
-- `POST /api/users`
-- `GET /api/users`
-- `POST /api/macro-goals`
-- `GET /api/macro-goals/patient/:patientId`
+- backend API routes for auth, users, macro goals, daily progress, meal plans, and meal completions
+- frontend foundation with MUI, React Query, and React Hook Form
+- patient home with macro progress and meal checklist
+- simple nutritionist dashboard with linked-patient discovery through existing endpoints
+
+## Frontend routes
+
+- `/login`
+- `/register`
+- `/patient`
+- `/nutritionist`
 
 ## Environment
 
-Copy `.env.example` to `.env` and set your PostgreSQL connection string:
+Copy `.env.example` to `.env` and set the required values:
 
 ```bash
 DATABASE_URL=
+JWT_SECRET=
 ```
 
 ## Run locally
@@ -26,10 +34,12 @@ npm run prisma:migrate -- --name init
 npm run dev
 ```
 
-## Tests
+Open `http://localhost:3000`.
 
-Unit tests are mandatory for every new module, service, route handler, and validation rule added to the project.
+## Verification
 
 ```bash
+npm run lint
 npm test
+npm run build
 ```
