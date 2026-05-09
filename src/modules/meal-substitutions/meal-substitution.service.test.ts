@@ -3,8 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prismaMock, resetPrismaMock } from "@/test/prisma.mock";
 
-const { assertNutritionistCanAccessPatientMock } = vi.hoisted(() => ({
+const {
+  assertNutritionistCanAccessPatientMock,
+  estimateMealPhotoMacrosMock,
+} = vi.hoisted(() => ({
   assertNutritionistCanAccessPatientMock: vi.fn(),
+  estimateMealPhotoMacrosMock: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -15,9 +19,15 @@ vi.mock("@/modules/patient-profile/patient-profile.service", () => ({
   assertNutritionistCanAccessPatient: assertNutritionistCanAccessPatientMock,
 }));
 
+vi.mock("@/modules/meal-substitutions/meal-substitution-estimation.service", () => ({
+  estimateMealPhotoMacros: estimateMealPhotoMacrosMock,
+}));
+
 import {
   approveMealSubstitution,
   createMealSubstitution,
+  estimateNutritionistMealSubstitutionMacros,
+  estimatePatientMealSubstitutionMacros,
   getNutritionistMealSubstitutionById,
   getPatientMealSubstitutionById,
   listNutritionistMealSubstitutions,
@@ -38,6 +48,15 @@ function buildSubstitutionRecord(status = MealSubstitutionStatus.PENDING) {
     note: "Can I swap this?",
     status,
     nutritionistFeedback: null,
+    estimatedCalories: null,
+    estimatedProtein: null,
+    estimatedCarbs: null,
+    estimatedFat: null,
+    estimatedFoods: null,
+    portionEstimate: null,
+    confidence: null,
+    aiNotes: null,
+    estimatedAt: null,
     reviewedAt: null,
     createdAt,
     updatedAt,
@@ -61,9 +80,10 @@ describe("meal substitution service", () => {
   beforeEach(() => {
     resetPrismaMock();
     assertNutritionistCanAccessPatientMock.mockReset();
+    estimateMealPhotoMacrosMock.mockReset();
   });
 
-  it("creates a substitution request for a meal in the patient's active plan", async () => {
+  it("creates a substitution request with an AI estimate for a meal in the patient's active plan", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: "patient-1",
       role: UserRole.PATIENT,
@@ -79,6 +99,43 @@ describe("meal substitution service", () => {
       },
     });
     prismaMock.mealSubstitution.create.mockResolvedValue(buildSubstitutionRecord());
+    estimateMealPhotoMacrosMock.mockResolvedValue({
+      identifiedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      calories: 620,
+      protein: 42,
+      carbs: 68,
+      fat: 18,
+      confidence: "MEDIUM",
+      notes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+    });
+    prismaMock.mealSubstitution.update.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      estimatedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      confidence: "MEDIUM",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: updatedAt,
+    });
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      estimatedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      confidence: "MEDIUM",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: updatedAt,
+    });
 
     const result = await createMealSubstitution("patient-1", {
       mealId: "meal-1",
@@ -97,7 +154,12 @@ describe("meal substitution service", () => {
       },
       select: expect.any(Object),
     });
+    expect(estimateMealPhotoMacrosMock).toHaveBeenCalledWith(
+      "https://cdn.example.com/meal.jpg",
+    );
+    expect(prismaMock.mealSubstitution.update).toHaveBeenCalled();
     expect(result.status).toBe("PENDING");
+    expect(result.estimatedCalories).toBe(620);
   });
 
   it("rejects substitutions for meals outside the patient's active plan", async () => {
@@ -229,6 +291,188 @@ describe("meal substitution service", () => {
     ).rejects.toMatchObject({
       message: "Meal substitution request has already been reviewed.",
       statusCode: 409,
+    });
+  });
+
+  it("returns an existing estimation without re-running AI when force is not set", async () => {
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      estimatedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      confidence: "MEDIUM",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: updatedAt,
+    });
+
+    const result = await estimatePatientMealSubstitutionMacros("patient-1", "sub-1");
+
+    expect(estimateMealPhotoMacrosMock).not.toHaveBeenCalled();
+    expect(result.estimatedMacros.calories).toBe(620);
+    expect(result.confidence).toBe("MEDIUM");
+  });
+
+  it("runs estimation and saves the result when no prior estimate exists", async () => {
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue(buildSubstitutionRecord());
+    estimateMealPhotoMacrosMock.mockResolvedValue({
+      identifiedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      calories: 620,
+      protein: 42,
+      carbs: 68,
+      fat: 18,
+      confidence: "MEDIUM",
+      notes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+    });
+    prismaMock.mealSubstitution.update.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      estimatedFoods: ["rice", "grilled chicken", "salad"],
+      portionEstimate: "One medium plate",
+      confidence: "MEDIUM",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: updatedAt,
+    });
+
+    const result = await estimatePatientMealSubstitutionMacros("patient-1", "sub-1");
+
+    expect(estimateMealPhotoMacrosMock).toHaveBeenCalledWith(
+      "https://cdn.example.com/meal.jpg",
+    );
+    expect(prismaMock.mealSubstitution.update).toHaveBeenCalledWith({
+      where: { id: "sub-1" },
+      data: {
+        estimatedCalories: 620,
+        estimatedProtein: 42,
+        estimatedCarbs: 68,
+        estimatedFat: 18,
+        estimatedFoods: ["rice", "grilled chicken", "salad"],
+        portionEstimate: "One medium plate",
+        confidence: "MEDIUM",
+        aiNotes:
+          "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+        estimatedAt: expect.any(Date),
+      },
+      select: expect.any(Object),
+    });
+    expect(result.identifiedFoods).toEqual(["rice", "grilled chicken", "salad"]);
+  });
+
+  it("re-runs estimation when force is true", async () => {
+    assertNutritionistCanAccessPatientMock.mockResolvedValue(undefined);
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 500,
+      estimatedProtein: 30,
+      estimatedCarbs: 55,
+      estimatedFat: 15,
+      estimatedFoods: ["old result"],
+      portionEstimate: "Old estimate",
+      confidence: "LOW",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: createdAt,
+    });
+    estimateMealPhotoMacrosMock.mockResolvedValue({
+      identifiedFoods: ["rice", "chicken"],
+      portionEstimate: "Updated plate",
+      calories: 610,
+      protein: 40,
+      carbs: 65,
+      fat: 20,
+      confidence: "MEDIUM",
+      notes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+    });
+    prismaMock.mealSubstitution.update.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 610,
+      estimatedProtein: 40,
+      estimatedCarbs: 65,
+      estimatedFat: 20,
+      estimatedFoods: ["rice", "chicken"],
+      portionEstimate: "Updated plate",
+      confidence: "MEDIUM",
+      aiNotes:
+        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+      estimatedAt: updatedAt,
+    });
+
+    const result = await estimateNutritionistMealSubstitutionMacros("nutri-1", "sub-1", {
+      force: true,
+    });
+
+    expect(estimateMealPhotoMacrosMock).toHaveBeenCalledTimes(1);
+    expect(result.portionEstimate).toBe("Updated plate");
+  });
+
+  it("returns a controlled error when the image url is invalid", async () => {
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      imageUrl: "not-a-url",
+    });
+
+    await expect(
+      estimatePatientMealSubstitutionMacros("patient-1", "sub-1"),
+    ).rejects.toMatchObject({
+      message: "Meal image URL is invalid.",
+      statusCode: 400,
+    });
+  });
+
+  it("rolls back the substitution when automatic estimation fails during submit", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.meal.findUnique.mockResolvedValue({
+      id: "meal-1",
+      name: "Lunch",
+      mealPlanId: "plan-1",
+      mealPlan: {
+        patientId: "patient-1",
+        nutritionistId: "nutri-1",
+        isActive: true,
+      },
+    });
+    prismaMock.mealSubstitution.create.mockResolvedValue(buildSubstitutionRecord());
+    prismaMock.mealSubstitution.delete.mockResolvedValue(buildSubstitutionRecord());
+    estimateMealPhotoMacrosMock.mockRejectedValue({
+      name: "AbortError",
+    });
+
+    await expect(
+      createMealSubstitution("patient-1", {
+        mealId: "meal-1",
+        imageUrl: "https://cdn.example.com/meal.jpg",
+      }),
+    ).rejects.toMatchObject({
+      message: "Unable to estimate meal macros right now.",
+      statusCode: 502,
+    });
+    expect(prismaMock.mealSubstitution.delete).toHaveBeenCalledWith({
+      where: { id: "sub-1" },
+    });
+  });
+
+  it("returns a controlled error when AI returns invalid data", async () => {
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue(buildSubstitutionRecord());
+    estimateMealPhotoMacrosMock.mockRejectedValue(new SyntaxError("bad json"));
+
+    await expect(
+      estimatePatientMealSubstitutionMacros("patient-1", "sub-1"),
+    ).rejects.toMatchObject({
+      message: "AI estimation returned an invalid result.",
+      statusCode: 502,
     });
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mealSubstitutionEstimateMacrosBodySchema,
   nutritionistMealSubstitutionQuerySchema,
   nutritionistReviewMealSubstitutionBodySchema,
   patientMealSubstitutionBodySchema,
@@ -38,5 +39,13 @@ describe("meal substitution types", () => {
     });
 
     expect(result.patientId).toBe("patient-1");
+  });
+
+  it("accepts an optional force flag for macro estimation", () => {
+    const result = mealSubstitutionEstimateMacrosBodySchema.parse({
+      force: true,
+    });
+
+    expect(result.force).toBe(true);
   });
 });

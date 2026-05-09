@@ -58,6 +58,7 @@ export const prismaMock = {
   },
   mealSubstitution: {
     create: vi.fn(),
+    delete: vi.fn(),
     findMany: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
@@ -106,6 +107,7 @@ export function resetPrismaMock() {
   prismaMock.message.findMany.mockReset();
   prismaMock.message.updateMany.mockReset();
   prismaMock.mealSubstitution.create.mockReset();
+  prismaMock.mealSubstitution.delete.mockReset();
   prismaMock.mealSubstitution.findMany.mockReset();
   prismaMock.mealSubstitution.findUnique.mockReset();
   prismaMock.mealSubstitution.update.mockReset();

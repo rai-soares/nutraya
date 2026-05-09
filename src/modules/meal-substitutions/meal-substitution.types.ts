@@ -3,6 +3,8 @@ import { z } from "zod";
 const requiredText = (field: string) =>
   z.string().trim().min(1, `${field} is required.`);
 
+export const mealMacroConfidenceSchema = z.enum(["LOW", "MEDIUM", "HIGH"]);
+
 export const mealSubstitutionIdParamSchema = z.object({
   substitutionId: requiredText("Substitution request ID"),
 });
@@ -29,6 +31,10 @@ export const nutritionistMealSubstitutionQuerySchema = z.object({
   patientId: requiredText("Patient ID").optional(),
 });
 
+export const mealSubstitutionEstimateMacrosBodySchema = z.object({
+  force: z.boolean().optional(),
+});
+
 export type CreateMealSubstitutionInput = z.infer<
   typeof patientMealSubstitutionBodySchema
 >;
@@ -46,6 +52,18 @@ export type NutritionistMealSubstitutionQueryInput = z.infer<
 >;
 
 export type MealSubstitutionStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type MealMacroConfidence = z.infer<typeof mealMacroConfidenceSchema>;
+
+export type EstimateMealSubstitutionMacrosInput = z.infer<
+  typeof mealSubstitutionEstimateMacrosBodySchema
+>;
+
+export type MealMacroEstimationDto = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
 
 export type MealSubstitutionDto = {
   id: string;
@@ -56,6 +74,15 @@ export type MealSubstitutionDto = {
   note: string | null;
   status: MealSubstitutionStatus;
   nutritionistFeedback: string | null;
+  estimatedCalories: number | null;
+  estimatedProtein: number | null;
+  estimatedCarbs: number | null;
+  estimatedFat: number | null;
+  estimatedFoods: string[] | null;
+  portionEstimate: string | null;
+  confidence: MealMacroConfidence | null;
+  aiNotes: string | null;
+  estimatedAt: string | null;
   reviewedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -72,4 +99,15 @@ export type MealSubstitutionDto = {
     name: string;
     mealPlanId: string;
   };
+};
+
+export type MealSubstitutionMacroEstimationResponseDto = {
+  substitutionId: string;
+  imageUrl: string;
+  estimatedMacros: MealMacroEstimationDto;
+  identifiedFoods: string[];
+  portionEstimate: string;
+  confidence: MealMacroConfidence;
+  notes: string;
+  estimatedAt: string;
 };

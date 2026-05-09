@@ -23,6 +23,12 @@ enum MealSubstitutionStatus {
   REJECTED
 }
 
+enum MealMacroConfidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id                      String           @id @default(cuid())
   name                    String
@@ -125,6 +131,15 @@ model MealSubstitution {
   note                 String?
   status               MealSubstitutionStatus @default(PENDING)
   nutritionistFeedback String?
+  estimatedCalories    Int?
+  estimatedProtein     Int?
+  estimatedCarbs       Int?
+  estimatedFat         Int?
+  estimatedFoods       Json?
+  portionEstimate      String?
+  confidence           MealMacroConfidence?
+  aiNotes              String?
+  estimatedAt          DateTime?
   reviewedAt           DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt

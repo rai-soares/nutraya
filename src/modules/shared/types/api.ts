@@ -57,6 +57,25 @@ export type Meal = {
 };
 
 export type MealSubstitutionStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type MealMacroConfidence = "LOW" | "MEDIUM" | "HIGH";
+
+export type MealMacroEstimation = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export type MealSubstitutionMacroEstimationResponse = {
+  substitutionId: string;
+  imageUrl: string;
+  estimatedMacros: MealMacroEstimation;
+  identifiedFoods: string[];
+  portionEstimate: string;
+  confidence: MealMacroConfidence;
+  notes: string;
+  estimatedAt: string;
+};
 
 export type MealSubstitution = {
   id: string;
@@ -67,6 +86,15 @@ export type MealSubstitution = {
   note: string | null;
   status: MealSubstitutionStatus;
   nutritionistFeedback: string | null;
+  estimatedCalories: number | null;
+  estimatedProtein: number | null;
+  estimatedCarbs: number | null;
+  estimatedFat: number | null;
+  estimatedFoods: string[] | null;
+  portionEstimate: string | null;
+  confidence: MealMacroConfidence | null;
+  aiNotes: string | null;
+  estimatedAt: string | null;
   reviewedAt: string | null;
   createdAt: string;
   updatedAt: string;

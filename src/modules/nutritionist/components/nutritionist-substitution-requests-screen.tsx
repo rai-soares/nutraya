@@ -28,6 +28,7 @@ import {
   listNutritionistMealSubstitutions,
   rejectNutritionistMealSubstitution,
 } from "@/modules/meal-substitutions/meal-substitution.api";
+import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
 import { listNutritionistPatients } from "@/modules/nutritionist/nutritionist.api";
 import type {
   MealSubstitution,
@@ -269,6 +270,10 @@ export function NutritionistSubstitutionRequestsScreen() {
                           {substitution.nutritionistFeedback || "No feedback yet."}
                         </Typography>
                       </div>
+
+                      <MealSubstitutionEstimationPanel
+                        substitution={substitution}
+                      />
 
                       {substitution.status === "PENDING" ? (
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>

@@ -1,4 +1,9 @@
-import { MealSubstitutionStatus, UserRole } from "@prisma/client";
+import {
+  MealMacroConfidence,
+  MealSubstitutionStatus,
+  UserRole,
+} from "@prisma/client";
+import { ZodError } from "zod";
 
 import { AppError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
@@ -6,9 +11,12 @@ import { assertNutritionistCanAccessPatient } from "@/modules/patient-profile/pa
 
 import type {
   CreateMealSubstitutionInput,
+  EstimateMealSubstitutionMacrosInput,
+  MealSubstitutionMacroEstimationResponseDto,
   MealSubstitutionDto,
   ReviewMealSubstitutionInput,
 } from "./meal-substitution.types";
+import { estimateMealPhotoMacros } from "./meal-substitution-estimation.service";
 
 const mealSubstitutionSelect = {
   id: true,
@@ -19,6 +27,15 @@ const mealSubstitutionSelect = {
   note: true,
   status: true,
   nutritionistFeedback: true,
+  estimatedCalories: true,
+  estimatedProtein: true,
+  estimatedCarbs: true,
+  estimatedFat: true,
+  estimatedFoods: true,
+  portionEstimate: true,
+  confidence: true,
+  aiNotes: true,
+  estimatedAt: true,
   reviewedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -52,6 +69,15 @@ function toMealSubstitutionDto(substitution: {
   note: string | null;
   status: MealSubstitutionStatus;
   nutritionistFeedback: string | null;
+  estimatedCalories: number | null;
+  estimatedProtein: number | null;
+  estimatedCarbs: number | null;
+  estimatedFat: number | null;
+  estimatedFoods: unknown;
+  portionEstimate: string | null;
+  confidence: MealMacroConfidence | null;
+  aiNotes: string | null;
+  estimatedAt: Date | null;
   reviewedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -71,9 +97,75 @@ function toMealSubstitutionDto(substitution: {
 }): MealSubstitutionDto {
   return {
     ...substitution,
+    estimatedFoods: Array.isArray(substitution.estimatedFoods)
+      ? substitution.estimatedFoods.filter(
+          (value): value is string => typeof value === "string",
+        )
+      : null,
+    estimatedAt: substitution.estimatedAt?.toISOString() ?? null,
     reviewedAt: substitution.reviewedAt?.toISOString() ?? null,
     createdAt: substitution.createdAt.toISOString(),
     updatedAt: substitution.updatedAt.toISOString(),
+  };
+}
+
+function assertValidEstimateSourceImageUrl(imageUrl: string): void {
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(imageUrl);
+  } catch {
+    throw new AppError("Meal image URL is invalid.", 400);
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new AppError("Meal image URL is invalid.", 400);
+  }
+}
+
+function hasStoredEstimation(substitution: MealSubstitutionDto): boolean {
+  return Boolean(
+    substitution.estimatedAt &&
+      substitution.estimatedCalories !== null &&
+      substitution.estimatedProtein !== null &&
+      substitution.estimatedCarbs !== null &&
+      substitution.estimatedFat !== null &&
+      substitution.portionEstimate &&
+      substitution.confidence &&
+      substitution.aiNotes,
+  );
+}
+
+function toMealSubstitutionMacroEstimationResponse(
+  substitution: MealSubstitutionDto,
+): MealSubstitutionMacroEstimationResponseDto {
+  if (
+    substitution.estimatedCalories === null ||
+    substitution.estimatedProtein === null ||
+    substitution.estimatedCarbs === null ||
+    substitution.estimatedFat === null ||
+    !substitution.portionEstimate ||
+    !substitution.confidence ||
+    !substitution.aiNotes ||
+    !substitution.estimatedAt
+  ) {
+    throw new AppError("Meal substitution estimation is not available yet.", 409);
+  }
+
+  return {
+    substitutionId: substitution.id,
+    imageUrl: substitution.imageUrl,
+    estimatedMacros: {
+      calories: substitution.estimatedCalories,
+      protein: substitution.estimatedProtein,
+      carbs: substitution.estimatedCarbs,
+      fat: substitution.estimatedFat,
+    },
+    identifiedFoods: substitution.estimatedFoods ?? [],
+    portionEstimate: substitution.portionEstimate,
+    confidence: substitution.confidence,
+    notes: substitution.aiNotes,
+    estimatedAt: substitution.estimatedAt,
   };
 }
 
@@ -151,7 +243,22 @@ export async function createMealSubstitution(
     select: mealSubstitutionSelect,
   });
 
-  return toMealSubstitutionDto(substitution);
+  try {
+    const estimation = await estimateMealSubstitutionMacros(
+      toMealSubstitutionDto(substitution),
+      { force: true },
+    );
+
+    return getPatientMealSubstitutionById(patientId, estimation.substitutionId);
+  } catch (error) {
+    await prisma.mealSubstitution
+      .delete({
+        where: { id: substitution.id },
+      })
+      .catch(() => undefined);
+
+    throw error;
+  }
 }
 
 export async function listPatientMealSubstitutions(
@@ -216,10 +323,85 @@ export async function getNutritionistMealSubstitutionById(
   return substitution;
 }
 
+async function estimateMealSubstitutionMacros(
+  substitution: MealSubstitutionDto,
+  input?: EstimateMealSubstitutionMacrosInput,
+): Promise<MealSubstitutionMacroEstimationResponseDto> {
+  if (!substitution.imageUrl) {
+    throw new AppError(
+      "Only substitution requests with a meal image can be estimated.",
+      400,
+    );
+  }
+
+  if (hasStoredEstimation(substitution) && !input?.force) {
+    return toMealSubstitutionMacroEstimationResponse(substitution);
+  }
+
+  assertValidEstimateSourceImageUrl(substitution.imageUrl);
+
+  try {
+    const estimation = await estimateMealPhotoMacros(substitution.imageUrl);
+    const estimatedAt = new Date();
+    const updatedSubstitution = await prisma.mealSubstitution.update({
+      where: { id: substitution.id },
+      data: {
+        estimatedCalories: estimation.calories,
+        estimatedProtein: estimation.protein,
+        estimatedCarbs: estimation.carbs,
+        estimatedFat: estimation.fat,
+        estimatedFoods: estimation.identifiedFoods,
+        portionEstimate: estimation.portionEstimate,
+        confidence: estimation.confidence,
+        aiNotes: estimation.notes,
+        estimatedAt,
+      },
+      select: mealSubstitutionSelect,
+    });
+
+    return toMealSubstitutionMacroEstimationResponse(
+      toMealSubstitutionDto(updatedSubstitution),
+    );
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    if (error instanceof SyntaxError || error instanceof ZodError) {
+      throw new AppError("AI estimation returned an invalid result.", 502);
+    }
+
+    throw new AppError("Unable to estimate meal macros right now.", 502);
+  }
+}
+
+export async function estimatePatientMealSubstitutionMacros(
+  patientId: string,
+  substitutionId: string,
+  input?: EstimateMealSubstitutionMacrosInput,
+): Promise<MealSubstitutionMacroEstimationResponseDto> {
+  const substitution = await getPatientMealSubstitutionById(patientId, substitutionId);
+
+  return estimateMealSubstitutionMacros(substitution, input);
+}
+
+export async function estimateNutritionistMealSubstitutionMacros(
+  nutritionistId: string,
+  substitutionId: string,
+  input?: EstimateMealSubstitutionMacrosInput,
+): Promise<MealSubstitutionMacroEstimationResponseDto> {
+  const substitution = await getNutritionistMealSubstitutionById(
+    nutritionistId,
+    substitutionId,
+  );
+
+  return estimateMealSubstitutionMacros(substitution, input);
+}
+
 async function reviewMealSubstitution(
   nutritionistId: string,
   substitutionId: string,
-  status: MealSubstitutionStatus.APPROVED | MealSubstitutionStatus.REJECTED,
+  status: "APPROVED" | "REJECTED",
   input: ReviewMealSubstitutionInput,
 ): Promise<MealSubstitutionDto> {
   const substitution = await getNutritionistMealSubstitutionById(

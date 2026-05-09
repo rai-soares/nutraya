@@ -2,7 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Chip, Grid, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
 import { AppCard } from "@/modules/app-shell/components/app-card";
@@ -15,6 +27,7 @@ import {
   createPatientMealSubstitution,
   listPatientMealSubstitutions,
 } from "@/modules/meal-substitutions/meal-substitution.api";
+import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
 import { MealSubstitutionRequestDialog } from "@/modules/meal-substitutions/components/meal-substitution-request-dialog";
 import { MealChecklistItem } from "@/modules/meals/components/meal-checklist-item";
 import {
@@ -40,6 +53,9 @@ export function PatientHomeScreen() {
   const { session } = useAuth();
   const date = getTodayIsoDate();
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+  const [selectedSubstitutionId, setSelectedSubstitutionId] = useState<string | null>(
+    null,
+  );
   const token = session?.token ?? "";
   const authOptions = { token };
 
@@ -154,6 +170,14 @@ export function PatientHomeScreen() {
     () =>
       progressQuery.data?.meals.find((meal) => meal.id === selectedMealId) ?? null,
     [progressQuery.data?.meals, selectedMealId],
+  );
+
+  const selectedSubstitution = useMemo(
+    () =>
+      (substitutionsQuery.data ?? []).find(
+        (substitution) => substitution.id === selectedSubstitutionId,
+      ) ?? null,
+    [selectedSubstitutionId, substitutionsQuery.data],
   );
 
   const setupState = useMemo(() => {
@@ -306,7 +330,7 @@ export function PatientHomeScreen() {
 
         {substitutionMutation.isSuccess ? (
           <Alert severity="success">
-            Substitution request sent. Your nutritionist can now review the meal photo.
+            Substitution request sent with an approximate AI macro estimate for your nutritionist to review.
           </Alert>
         ) : null}
 
@@ -340,6 +364,9 @@ export function PatientHomeScreen() {
                 onRequestSubstitution={(mealId) => {
                   setSelectedMealId(mealId);
                 }}
+                onViewSubstitutionRequest={(substitutionId) => {
+                  setSelectedSubstitutionId(substitutionId);
+                }}
               />
             ))}
           </Stack>
@@ -371,6 +398,61 @@ export function PatientHomeScreen() {
             });
           }}
         />
+      ) : null}
+
+      {selectedSubstitution ? (
+        <Dialog
+          open
+          onClose={() => setSelectedSubstitutionId(null)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Substitution request details</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <Box
+                component="img"
+                src={selectedSubstitution.imageUrl}
+                alt={`Substitution request for ${selectedSubstitution.meal.name}`}
+                sx={{
+                  width: "100%",
+                  maxHeight: 320,
+                  objectFit: "cover",
+                  borderRadius: 3,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+              />
+
+              <div>
+                <Typography variant="subtitle2">Meal</Typography>
+                <Typography color="text.secondary">
+                  {selectedSubstitution.meal.name}
+                </Typography>
+              </div>
+
+              <div>
+                <Typography variant="subtitle2">Your note</Typography>
+                <Typography color="text.secondary">
+                  {selectedSubstitution.note || "No note provided."}
+                </Typography>
+              </div>
+
+              <div>
+                <Typography variant="subtitle2">Nutritionist feedback</Typography>
+                <Typography color="text.secondary">
+                  {selectedSubstitution.nutritionistFeedback || "No feedback yet."}
+                </Typography>
+              </div>
+
+              <MealSubstitutionEstimationPanel
+                substitution={selectedSubstitution}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSelectedSubstitutionId(null)}>Close</Button>
+          </DialogActions>
+        </Dialog>
       ) : null}
     </Stack>
   );

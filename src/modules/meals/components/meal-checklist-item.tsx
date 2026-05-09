@@ -30,6 +30,7 @@ type MealChecklistItemProps = {
   isPending?: boolean;
   onToggle: (mealId: string, completed: boolean) => void;
   onRequestSubstitution?: (mealId: string) => void;
+  onViewSubstitutionRequest?: (substitutionId: string) => void;
 };
 
 export function MealChecklistItem({
@@ -38,6 +39,7 @@ export function MealChecklistItem({
   isPending = false,
   onToggle,
   onRequestSubstitution,
+  onViewSubstitutionRequest,
 }: MealChecklistItemProps) {
   return (
     <AppCard
@@ -118,6 +120,15 @@ export function MealChecklistItem({
               onClick={() => onRequestSubstitution(meal.id)}
             >
               Request substitution
+            </Button>
+          ) : null}
+          {substitutionRequest && onViewSubstitutionRequest ? (
+            <Button
+              variant="text"
+              disabled={isPending}
+              onClick={() => onViewSubstitutionRequest(substitutionRequest.id)}
+            >
+              View request
             </Button>
           ) : null}
         </Stack>
