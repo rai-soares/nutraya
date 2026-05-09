@@ -2,6 +2,7 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { LinearProgress, Stack, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 
 type MacroProgressCardProps = {
   label: string;
@@ -10,6 +11,9 @@ type MacroProgressCardProps = {
   remaining: number;
   progress: number;
   unit: string;
+  color?: string;
+  trackColor?: string;
+  icon?: React.ReactNode;
 };
 
 export function MacroProgressCard({
@@ -19,38 +23,73 @@ export function MacroProgressCard({
   remaining,
   progress,
   unit,
+  color = "#12746b",
+  trackColor = "rgba(18, 116, 107, 0.12)",
+  icon,
 }: MacroProgressCardProps) {
   const safeProgress = Math.max(0, Math.min(progress, 100));
 
   return (
     <AppCard sx={{ height: "100%" }}>
-      <Stack spacing={2}>
+      <Stack spacing={2.25}>
         <Stack
           direction="row"
-          sx={{ alignItems: "center", justifyContent: "space-between" }}
+          sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
         >
-          <Typography variant="h3">{label}</Typography>
-          <TrendingUpRoundedIcon color="primary" fontSize="small" />
+          <div>
+            <Typography variant="subtitle2" sx={{ color }}>
+              {label}
+            </Typography>
+            <Typography variant="h2" sx={{ mt: 0.75 }}>
+              {consumed}
+              <Typography component="span" variant="body1" color="text.secondary" sx={{ ml: 0.5 }}>
+                / {goal} {unit}
+              </Typography>
+            </Typography>
+          </div>
+          <Stack
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 999,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: trackColor,
+              color,
+            }}
+          >
+            {icon ?? <TrendingUpRoundedIcon fontSize="small" />}
+          </Stack>
         </Stack>
 
-        <div>
-          <Typography variant="h2">
-            {consumed}
-            <Typography component="span" variant="body1" color="text.secondary" sx={{ ml: 0.5 }}>
-              / {goal} {unit}
-            </Typography>
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            {remaining} {unit} restantes
-          </Typography>
-        </div>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+          <MetricPill label="Consumido" tone="primary" />
+          <MetricPill
+            label={`${Math.max(remaining, 0)} ${unit} restantes`}
+            tone={remaining > 0 ? "default" : "warning"}
+          />
+        </Stack>
 
-        <div>
-          <LinearProgress variant="determinate" value={safeProgress} />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {safeProgress}% concluído
-          </Typography>
-        </div>
+        <Stack spacing={1}>
+          <LinearProgress
+            variant="determinate"
+            value={safeProgress}
+            sx={{
+              backgroundColor: trackColor,
+              "& .MuiLinearProgress-bar": {
+                backgroundColor: color,
+              },
+            }}
+          />
+          <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+            <Typography variant="body2" color="text.secondary">
+              Meta do dia
+            </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700, color }}>
+              {safeProgress}% concluído
+            </Typography>
+          </Stack>
+        </Stack>
       </Stack>
     </AppCard>
   );

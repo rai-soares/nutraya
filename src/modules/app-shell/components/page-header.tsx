@@ -4,10 +4,12 @@ export function PageHeader({
   title,
   subtitle,
   action,
+  eyebrow,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  eyebrow?: string;
 }) {
   return (
     <Stack
@@ -19,9 +21,14 @@ export function PageHeader({
       }}
     >
       <div>
+        {eyebrow ? (
+          <Typography variant="subtitle2" color="primary.main" sx={{ mb: 1 }}>
+            {eyebrow}
+          </Typography>
+        ) : null}
         <Typography variant="h1">{title}</Typography>
         {subtitle ? (
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
+          <Typography color="text.secondary" sx={{ mt: 1.25, maxWidth: 720 }}>
             {subtitle}
           </Typography>
         ) : null}

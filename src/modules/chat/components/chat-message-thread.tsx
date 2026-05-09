@@ -1,18 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Avatar,
-  Box,
-  Chip,
-  Dialog,
-  DialogContent,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Dialog, DialogContent, Stack, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
+import { ImagePreview } from "@/modules/app-shell/components/image-preview";
+import { ChatBubble } from "@/modules/chat/components/chat-bubble";
 import type { ChatMessage, ConversationParticipant } from "@/modules/shared/types/api";
 
 function formatMessageTime(value: string): string {
@@ -41,106 +35,39 @@ export function ChatMessageThread({
     return (
       <AppCard>
         <EmptyState
-          title="Nenhuma mensagem ainda."
-          description="Envie uma mensagem para iniciar a conversa."
+          title="Nenhuma mensagem ainda"
+          description="Inicie a conversa para acompanhar o paciente no dia a dia."
         />
       </AppCard>
     );
   }
 
   return (
-    <Stack spacing={1.5}>
-      {messages.map((message) => {
-        const isOwnMessage = message.senderId === currentUserId;
-        const participant = isOwnMessage
-          ? currentUserId === patient.id
-            ? patient
-            : nutritionist
-          : currentUserId === patient.id
-            ? nutritionist
-            : patient;
+    <AppCard
+      sx={{
+        backgroundColor: "rgba(255,255,255,0.84)",
+      }}
+    >
+      <Stack spacing={2}>
+        {messages.map((message) => {
+          const isOwnMessage = message.senderId === currentUserId;
+          const participant = isOwnMessage
+            ? currentUserId === patient.id
+              ? patient
+              : nutritionist
+            : currentUserId === patient.id
+              ? nutritionist
+              : patient;
 
-        return (
-          <Stack
-            key={message.id}
-            direction="row"
-            spacing={1.5}
-            sx={{
-              justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-            }}
-          >
-            {!isOwnMessage ? (
-              <Avatar sx={{ width: 36, height: 36 }}>
-                {participant.name.slice(0, 1).toUpperCase()}
-              </Avatar>
-            ) : null}
-
-            <AppCard
-              sx={{
-                maxWidth: { xs: "88%", sm: "75%" },
-                backgroundColor: isOwnMessage ? "primary.main" : "background.paper",
-                color: isOwnMessage ? "primary.contrastText" : "text.primary",
-              }}
-            >
-              <Stack spacing={1}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    minWidth: { sm: 260 },
-                  }}
-                >
-                <Typography
-                  variant="subtitle2"
-                    sx={{
-                      color: isOwnMessage ? "inherit" : "text.primary",
-                    }}
-                  >
-                    {isOwnMessage ? "Você" : participant.name}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: isOwnMessage
-                        ? "rgba(255,255,255,0.82)"
-                        : "text.secondary",
-                    }}
-                  >
-                    {formatMessageTime(message.createdAt)}
-                  </Typography>
-                </Stack>
-
-                {message.messageType === "IMAGE" && message.imageUrl ? (
-                  <Box
-                    component="img"
-                    src={message.imageUrl}
-                    alt="Imagem do chat"
-                    onClick={() => setPreviewImage(message.imageUrl)}
-                    sx={{
-                      width: "100%",
-                      maxWidth: { xs: 240, sm: 320 },
-                      maxHeight: 320,
-                      objectFit: "cover",
-                      borderRadius: 2,
-                      cursor: "pointer",
-                    }}
-                  />
-                ) : null}
-
-                {message.text ? (
-                  <Typography
-                    sx={{
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {message.text}
-                  </Typography>
-                ) : null}
-
-                {isOwnMessage ? (
+          return (
+            <ChatBubble
+              key={message.id}
+              align={isOwnMessage ? "end" : "start"}
+              name={isOwnMessage ? "Você" : participant.name}
+              time={formatMessageTime(message.createdAt)}
+              avatarLabel={participant.name.slice(0, 1).toUpperCase()}
+              footer={
+                isOwnMessage ? (
                   <Chip
                     label={message.readAt ? "Lida" : "Enviada"}
                     size="small"
@@ -152,41 +79,40 @@ export function ChatMessageThread({
                       color: "inherit",
                     }}
                   />
-                ) : null}
-              </Stack>
-            </AppCard>
+                ) : null
+              }
+            >
+              {message.messageType === "IMAGE" && message.imageUrl ? (
+                <ImagePreview
+                  src={message.imageUrl}
+                  alt="Imagem do chat"
+                  maxHeight={320}
+                  onClick={() => setPreviewImage(message.imageUrl)}
+                />
+              ) : null}
 
-            {isOwnMessage ? (
-              <Avatar sx={{ width: 36, height: 36 }}>
-                {participant.name.slice(0, 1).toUpperCase()}
-              </Avatar>
-            ) : null}
-          </Stack>
-        );
-      })}
+              {message.text ? (
+                <Typography sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                  {message.text}
+                </Typography>
+              ) : null}
+            </ChatBubble>
+          );
+        })}
+      </Stack>
 
-      <Dialog
-        open={Boolean(previewImage)}
-        onClose={() => setPreviewImage(null)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={Boolean(previewImage)} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>
         <DialogContent sx={{ p: 1.5 }}>
           {previewImage ? (
             <Box
               component="img"
               src={previewImage}
               alt="Imagem ampliada do chat"
-              sx={{
-                width: "100%",
-                maxHeight: "80vh",
-                objectFit: "contain",
-                borderRadius: 2,
-              }}
+              sx={{ width: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 2 }}
             />
           ) : null}
         </DialogContent>
       </Dialog>
-    </Stack>
+    </AppCard>
   );
 }

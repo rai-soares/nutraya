@@ -595,10 +595,7 @@ export async function saveNutritionistMealSubstitutionFeedback(
   substitutionId: string,
   input: SaveMealSubstitutionFeedbackInput,
 ): Promise<MealSubstitutionDto> {
-  const substitution = await getNutritionistMealSubstitutionById(
-    nutritionistId,
-    substitutionId,
-  );
+  await getNutritionistMealSubstitutionById(nutritionistId, substitutionId);
   const updated = await prisma.mealSubstitution.update({
     where: { id: substitutionId },
     data: {

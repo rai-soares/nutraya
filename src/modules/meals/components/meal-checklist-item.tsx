@@ -1,14 +1,9 @@
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
-import {
-  Button,
-  Chip,
-  Divider,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Button, Chip, Divider, Stack, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { formatScheduledTime } from "@/modules/shared/utils/date";
 
 type MealChecklistItemProps = {
@@ -44,8 +39,8 @@ export function MealChecklistItem({
   return (
     <AppCard
       sx={{
-        borderColor: meal.completed ? "rgba(22, 163, 74, 0.28)" : undefined,
-        backgroundColor: meal.completed ? "rgba(240, 253, 244, 0.96)" : undefined,
+        borderColor: meal.completed ? "rgba(47, 143, 102, 0.22)" : undefined,
+        backgroundColor: meal.completed ? "rgba(246, 255, 250, 0.96)" : undefined,
       }}
     >
       <Stack spacing={2}>
@@ -54,20 +49,16 @@ export function MealChecklistItem({
           spacing={2}
           sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
         >
-          <Stack spacing={0.75}>
+          <Stack spacing={0.9}>
             <Typography variant="h3">{meal.name}</Typography>
-            <Typography color="text.secondary">{formatScheduledTime(meal.scheduledTime)}</Typography>
+            <Typography color="text.secondary">
+              {formatScheduledTime(meal.scheduledTime)}
+            </Typography>
           </Stack>
+
           <Chip
-            color={meal.completed ? "success" : "default"}
-            icon={
-              meal.completed ? (
-                <CheckCircleRoundedIcon />
-              ) : (
-                <RadioButtonUncheckedRoundedIcon />
-              )
-            }
             label={meal.completed ? "Concluída" : "Pendente"}
+            color={meal.completed ? "success" : "default"}
             variant={meal.completed ? "filled" : "outlined"}
           />
         </Stack>
@@ -76,31 +67,36 @@ export function MealChecklistItem({
           <Typography color="text.secondary">{meal.description}</Typography>
         ) : null}
 
-        <Divider />
-
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-          <Chip label={`${meal.calories} kcal`} size="small" />
-          <Chip label={`${meal.protein}g proteína`} size="small" />
-          <Chip label={`${meal.carbs}g carboidratos`} size="small" />
-          <Chip label={`${meal.fat}g gorduras`} size="small" />
+          <MetricPill label={`${meal.calories} kcal`} tone="default" />
+          <MetricPill label={`${meal.protein}g proteína`} tone="primary" />
+          <MetricPill label={`${meal.carbs}g carboidratos`} tone="default" />
+          <MetricPill label={`${meal.fat}g gorduras`} tone="warning" />
           {substitutionRequest ? (
-            <Chip
+            <MetricPill
               label={
                 substitutionRequest.appliedToDailyLog
                   ? "Substituição aplicada"
-                  : "Substituição aguardando sincronização"
+                  : "Substituição aguardando aplicação"
               }
-              size="small"
-              color={substitutionRequest.appliedToDailyLog ? "success" : "warning"}
-              variant={substitutionRequest.appliedToDailyLog ? "filled" : "outlined"}
+              tone={substitutionRequest.appliedToDailyLog ? "success" : "warning"}
             />
           ) : null}
         </Stack>
+
+        <Divider />
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <Button
             variant={meal.completed ? "outlined" : "contained"}
             disabled={isPending}
+            startIcon={
+              meal.completed ? (
+                <CheckCircleRoundedIcon />
+              ) : (
+                <RadioButtonUncheckedRoundedIcon />
+              )
+            }
             onClick={() => onToggle(meal.id, meal.completed)}
           >
             {isPending

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import MarkChatReadRoundedIcon from "@mui/icons-material/MarkChatReadRounded";
 import { Alert, Stack, Typography } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
@@ -9,7 +10,9 @@ import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
+import { SectionCard } from "@/modules/app-shell/components/section-card";
 import {
   getPatientConversation,
   listPatientMessages,
@@ -17,10 +20,7 @@ import {
   sendPatientMessage,
   uploadImage,
 } from "@/modules/chat/chat.api";
-import {
-  ChatMessageForm,
-  type ChatMessageFormSubmitValues,
-} from "@/modules/chat/components/chat-message-form";
+import { ChatMessageForm, type ChatMessageFormSubmitValues } from "@/modules/chat/components/chat-message-form";
 import { ChatMessageThread } from "@/modules/chat/components/chat-message-thread";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
@@ -62,8 +62,7 @@ export function PatientChatScreen() {
             imageUrl: string;
             text?: string;
           },
-    ) =>
-      sendPatientMessage(values, authOptions),
+    ) => sendPatientMessage(values, authOptions),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -96,8 +95,7 @@ export function PatientChatScreen() {
 
   const unreadIncomingMessages =
     messagesQuery.data?.filter(
-      (message) =>
-        message.receiverId === session?.user.id && message.readAt === null,
+      (message) => message.receiverId === session?.user.id && message.readAt === null,
     ).length ?? 0;
 
   useEffect(() => {
@@ -117,14 +115,14 @@ export function PatientChatScreen() {
   ]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
-    return <LoadingState message="Carregando conversa..." />;
+    return <LoadingState message="Carregando..." />;
   }
 
   if (conversationQuery.isError) {
     return (
       <ErrorState
         title="Chat indisponível"
-        message={getErrorMessage(conversationQuery.error, "Não foi possível carregar a conversa.")}
+        message={getErrorMessage(conversationQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void conversationQuery.refetch()}
       />
     );
@@ -134,7 +132,7 @@ export function PatientChatScreen() {
     return (
       <ErrorState
         title="Mensagens indisponíveis"
-        message={getErrorMessage(messagesQuery.error, "Não foi possível carregar as mensagens.")}
+        message={getErrorMessage(messagesQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void messagesQuery.refetch()}
       />
     );
@@ -143,8 +141,8 @@ export function PatientChatScreen() {
   if (!conversationQuery.data || !messagesQuery.data || !session?.user.id) {
     return (
       <EmptyState
-        title="Nenhuma conversa disponível"
-        description="Sua conversa aparecerá aqui assim que o vínculo com o nutricionista estiver pronto."
+        title="Nenhuma mensagem ainda"
+        description="Inicie a conversa para acompanhar o paciente no dia a dia."
       />
     );
   }
@@ -152,24 +150,33 @@ export function PatientChatScreen() {
   return (
     <Stack spacing={3}>
       <PageHeader
+        eyebrow="Mensagens"
         title="Chat"
         subtitle={`Converse diretamente com ${conversationQuery.data.nutritionist.name}.`}
       />
 
       {markReadMutation.isError ? (
         <Alert severity="error">
-          {getErrorMessage(markReadMutation.error, "Não foi possível atualizar a leitura das mensagens.")}
+          {getErrorMessage(markReadMutation.error, "Não foi possível salvar as alterações.")}
         </Alert>
       ) : null}
 
       <AppCard>
-        <Stack spacing={1}>
-          <Typography variant="h3">
-            {conversationQuery.data.nutritionist.name}
-          </Typography>
-          <Typography color="text.secondary">
-            {conversationQuery.data.nutritionist.email}
-          </Typography>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          sx={{ justifyContent: "space-between", alignItems: { md: "center" } }}
+        >
+          <div>
+            <Typography variant="h3">{conversationQuery.data.nutritionist.name}</Typography>
+            <Typography color="text.secondary">
+              {conversationQuery.data.nutritionist.email}
+            </Typography>
+          </div>
+          <MetricPill
+            label={unreadIncomingMessages > 0 ? `${unreadIncomingMessages} não lidas` : "Todas as mensagens foram lidas"}
+            tone={unreadIncomingMessages > 0 ? "warning" : "success"}
+          />
         </Stack>
       </AppCard>
 
@@ -180,11 +187,13 @@ export function PatientChatScreen() {
         nutritionist={conversationQuery.data.nutritionist}
       />
 
-      <AppCard>
+      <SectionCard
+        title="Nova mensagem"
+        description="Envie texto ou imagem para manter o acompanhamento em dia."
+        action={<MarkChatReadRoundedIcon color="primary" />}
+      >
         <ChatMessageForm
-          isSubmitting={
-            uploadImageMutation.isPending || sendMessageMutation.isPending
-          }
+          isSubmitting={uploadImageMutation.isPending || sendMessageMutation.isPending}
           errorMessage={
             (uploadImageMutation.isError &&
               getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
@@ -207,7 +216,7 @@ export function PatientChatScreen() {
             });
           }}
         />
-      </AppCard>
+      </SectionCard>
     </Stack>
   );
 }

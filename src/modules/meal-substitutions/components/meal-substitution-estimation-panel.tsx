@@ -1,19 +1,13 @@
 "use client";
 
-import {
-  Alert,
-  Chip,
-  Divider,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Divider, Stack, Typography } from "@mui/material";
 
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
+import { SectionCard } from "@/modules/app-shell/components/section-card";
+import { StatusChip } from "@/modules/app-shell/components/status-chip";
 import type { MealSubstitution } from "@/modules/shared/types/api";
 import { formatFriendlyDate } from "@/modules/shared/utils/date";
-import {
-  AI_ESTIMATION_DISCLAIMER,
-  getConfidenceLabel,
-} from "@/modules/shared/utils/pt-br";
+import { AI_ESTIMATION_DISCLAIMER } from "@/modules/shared/utils/pt-br";
 
 export function hasMealSubstitutionEstimation(substitution: MealSubstitution) {
   return Boolean(
@@ -38,59 +32,31 @@ export function MealSubstitutionEstimationPanel({
 
   return (
     <Stack spacing={1.5}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
-      >
-        <div>
-          <Typography variant="subtitle2">Macros estimados</Typography>
-          <Typography color="text.secondary">
-            Estimativa aproximada com base apenas no que aparece na imagem.
-          </Typography>
-        </div>
-      </Stack>
-
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       {estimationAvailable ? (
         <>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-            <Chip label={`${substitution.estimatedCalories} kcal`} size="small" />
-            <Chip label={`${substitution.estimatedProtein}g proteína`} size="small" />
-            <Chip label={`${substitution.estimatedCarbs}g carboidratos`} size="small" />
-            <Chip label={`${substitution.estimatedFat}g gorduras`} size="small" />
-            <Chip
-              label={`Confiança ${getConfidenceLabel(substitution.confidence)}`}
-              size="small"
-              color={
-                substitution.confidence === "HIGH"
-                  ? "success"
-                  : substitution.confidence === "MEDIUM"
-                    ? "warning"
-                    : "default"
-              }
-              variant={substitution.confidence === "LOW" ? "outlined" : "filled"}
-            />
+            <MetricPill label={`${substitution.estimatedCalories} kcal`} tone="default" />
+            <MetricPill label={`${substitution.estimatedProtein}g proteína`} tone="primary" />
+            <MetricPill label={`${substitution.estimatedCarbs}g carboidratos`} tone="default" />
+            <MetricPill label={`${substitution.estimatedFat}g gorduras`} tone="warning" />
+            <StatusChip type="confidence" value={substitution.confidence!} />
           </Stack>
 
-          <Divider />
-
-          <div>
-            <Typography variant="subtitle2">Alimentos identificados</Typography>
+          <SectionCard title="Alimentos identificados" variant="outlined">
             <Typography color="text.secondary">
               {substitution.estimatedFoods?.length
                 ? substitution.estimatedFoods.join(", ")
-                : "Nenhum alimento identificado com confiança."}
+                : "Nenhum alimento identificado com confiança suficiente."}
             </Typography>
-          </div>
+          </SectionCard>
 
-          <div>
-            <Typography variant="subtitle2">Estimativa de porção</Typography>
+          <SectionCard title="Estimativa de porção" variant="outlined">
             <Typography color="text.secondary">
               {substitution.portionEstimate || "Nenhuma estimativa de porção disponível."}
             </Typography>
-          </div>
+          </SectionCard>
 
           <Alert severity="info">{AI_ESTIMATION_DISCLAIMER}</Alert>
 

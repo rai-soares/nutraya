@@ -2,27 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
+import { ImagePreview } from "@/modules/app-shell/components/image-preview";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
-import { MacroProgressCard } from "@/modules/macros/components/macro-progress-card";
+import { SectionCard } from "@/modules/app-shell/components/section-card";
+import { MacroSummaryGrid } from "@/modules/macros/components/macro-summary-grid";
 import {
   createPatientMealSubstitution,
   listPatientMealSubstitutions,
@@ -30,33 +21,18 @@ import {
 import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
 import { MealSubstitutionRequestDialog } from "@/modules/meal-substitutions/components/meal-substitution-request-dialog";
 import { MealChecklistItem } from "@/modules/meals/components/meal-checklist-item";
-import {
-  ApiClientError,
-  apiClient,
-} from "@/modules/shared/api/api-client";
 import { uploadImage } from "@/modules/chat/chat.api";
+import { ApiClientError, apiClient } from "@/modules/shared/api/api-client";
 import type { DailyMacroProgress, MealSubstitution } from "@/modules/shared/types/api";
-import {
-  formatFriendlyDate,
-  getTodayIsoDate,
-} from "@/modules/shared/utils/date";
+import { formatFriendlyDate, getTodayIsoDate } from "@/modules/shared/utils/date";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
-
-const progressCardConfig = [
-  { key: "calories", label: "Calorias", unit: "kcal" },
-  { key: "protein", label: "Proteína", unit: "g" },
-  { key: "carbs", label: "Carboidratos", unit: "g" },
-  { key: "fat", label: "Gorduras", unit: "g" },
-] as const;
 
 export function PatientHomeScreen() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const date = getTodayIsoDate();
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
-  const [selectedSubstitutionId, setSelectedSubstitutionId] = useState<string | null>(
-    null,
-  );
+  const [selectedSubstitutionId, setSelectedSubstitutionId] = useState<string | null>(null);
   const token = session?.token ?? "";
   const authOptions = { token };
 
@@ -173,8 +149,7 @@ export function PatientHomeScreen() {
   }, [substitutionsQuery.data]);
 
   const selectedMeal = useMemo(
-    () =>
-      progressQuery.data?.meals.find((meal) => meal.id === selectedMealId) ?? null,
+    () => progressQuery.data?.meals.find((meal) => meal.id === selectedMealId) ?? null,
     [progressQuery.data?.meals, selectedMealId],
   );
 
@@ -187,26 +162,23 @@ export function PatientHomeScreen() {
   );
 
   const setupState = useMemo(() => {
-    if (
-      !(progressQuery.error instanceof ApiClientError) ||
-      progressQuery.error.status !== 404
-    ) {
+    if (!(progressQuery.error instanceof ApiClientError) || progressQuery.error.status !== 404) {
       return null;
     }
 
     if (progressQuery.error.message === "Macro goal not found.") {
       return {
-        title: "Your account is active, but your goals are not ready yet",
+        title: "Sua conta está ativa, mas suas metas ainda não foram configuradas",
         description:
-          "You signed in successfully. Your nutritionist still needs to set your macro goals before your daily progress can appear.",
+          "Seu nutricionista ainda precisa definir suas metas de macros antes que seu progresso diário apareça aqui.",
       };
     }
 
     if (progressQuery.error.message === "Active meal plan not found.") {
       return {
-        title: "Your account is active, but your meal plan is not ready yet",
+        title: "Nenhum plano alimentar ativo",
         description:
-          "You signed in successfully. Your nutritionist still needs to activate a meal plan before your daily routine can appear here.",
+          "O nutricionista ainda não configurou um plano alimentar para este paciente.",
       };
     }
 
@@ -214,31 +186,18 @@ export function PatientHomeScreen() {
   }, [progressQuery.error]);
 
   if (progressQuery.isLoading) {
-    return <LoadingState message="Carregando seu progresso de hoje..." />;
+    return <LoadingState message="Carregando..." />;
   }
 
   if (setupState) {
     return (
       <Stack spacing={3}>
         <PageHeader
+          eyebrow="Hoje"
           title={`Olá, ${session?.user.name?.split(" ")[0] ?? "paciente"}`}
-          subtitle="Seu acesso foi realizado com sucesso. Estamos verificando a configuração nutricional da sua conta."
+          subtitle="Seu acesso foi realizado com sucesso. Falta apenas concluir sua configuração nutricional."
         />
-        <Alert severity="info">
-          Seu acesso foi realizado com sucesso. Falta apenas concluir sua configuração nutricional.
-        </Alert>
-        <EmptyState
-          title={
-            setupState.title === "Your account is active, but your goals are not ready yet"
-              ? "Sua conta está ativa, mas suas metas ainda não foram configuradas"
-              : "Sua conta está ativa, mas seu plano alimentar ainda não está pronto"
-          }
-          description={
-            setupState.description.includes("macro goals")
-              ? "Seu nutricionista ainda precisa definir suas metas de macros antes que seu progresso diário apareça aqui."
-              : "Seu nutricionista ainda precisa ativar um plano alimentar antes que sua rotina diária apareça aqui."
-          }
-        />
+        <EmptyState title={setupState.title} description={setupState.description} />
       </Stack>
     );
   }
@@ -266,8 +225,8 @@ export function PatientHomeScreen() {
   if (!progressQuery.data) {
     return (
       <EmptyState
-        title="Nenhum progresso diário disponível"
-        description="Defina metas de macros e ative um plano alimentar para acompanhar o progresso de hoje."
+        title="Nenhum plano alimentar ativo"
+        description="O nutricionista ainda não configurou um plano alimentar para este paciente."
       />
     );
   }
@@ -275,74 +234,86 @@ export function PatientHomeScreen() {
   return (
     <Stack spacing={3}>
       <PageHeader
+        eyebrow="Acompanhamento diário"
         title={`Olá, ${session?.user.name?.split(" ")[0] ?? "paciente"}`}
         subtitle={`Hoje é ${formatFriendlyDate(progressQuery.data.date)}.`}
       />
 
-      <AppCard>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          sx={{
-            alignItems: { xs: "flex-start", md: "center" },
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <Typography variant="h3">Progresso de hoje</Typography>
-            <Typography color="text.secondary" sx={{ mt: 1 }}>
-              Plano alimentar ativo: {progressQuery.data.mealPlan.title}
-            </Typography>
-          </div>
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-            <Chip
-              label={`${completedSummary.completed}/${completedSummary.total} refeições concluídas`}
-              color="primary"
-            />
-            <Chip
-              label={`${completedSummary.pending} pendentes`}
-              variant="outlined"
-            />
+      <AppCard
+        sx={{
+          background:
+            "linear-gradient(135deg, rgba(18,116,107,0.96) 0%, rgba(70,138,164,0.95) 100%)",
+          color: "common.white",
+        }}
+      >
+        <Stack spacing={2.5}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            sx={{ justifyContent: "space-between", alignItems: { md: "center" } }}
+          >
+            <div>
+              <Typography variant="subtitle2" sx={{ color: "rgba(255,255,255,0.75)" }}>
+                Progresso de hoje
+              </Typography>
+              <Typography variant="h2" sx={{ mt: 1 }}>
+                {progressQuery.data.mealPlan.title}
+              </Typography>
+              <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.78)", maxWidth: 540 }}>
+                Acompanhe o consumo do dia, marque suas refeições e envie substituições quando precisar.
+              </Typography>
+            </div>
+
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+              <MetricPill
+                label={`${completedSummary.completed}/${completedSummary.total} concluídas`}
+                tone="success"
+              />
+              <MetricPill label={`${completedSummary.pending} pendentes`} tone="warning" />
+            </Stack>
+          </Stack>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} useFlexGap sx={{ flexWrap: "wrap" }}>
+            <MetricPill label="Metas do dia" tone="primary" />
+            <MetricPill label="Consumido" tone="default" />
+            <MetricPill label="Restante" tone="default" />
           </Stack>
         </Stack>
       </AppCard>
 
-      <Grid container spacing={2.5}>
-        {progressCardConfig.map((item) => (
-          <Grid key={item.key} size={{ xs: 12, sm: 6, lg: 3 }}>
-            <MacroProgressCard
-              label={item.label}
-              unit={item.unit}
-              consumed={progressQuery.data.consumed[item.key]}
-              goal={progressQuery.data.goals[item.key]}
-              remaining={progressQuery.data.remaining[item.key]}
-              progress={progressQuery.data.progress[item.key]}
-            />
-          </Grid>
-        ))}
-      </Grid>
+      <SectionCard
+        title="Metas do dia"
+        description="Seus macros ficam atualizados automaticamente conforme as refeições são concluídas."
+      >
+        <MacroSummaryGrid progress={progressQuery.data} />
+      </SectionCard>
 
-      <Stack spacing={2}>
-        <PageHeader
-          title="Refeições de hoje"
-          subtitle="Marque as refeições conforme concluir. Os macros do dia são atualizados automaticamente."
-        />
-
+      <SectionCard
+        title="Refeições de hoje"
+        description="Marque as refeições conforme concluir. O progresso do dia é recalculado a cada atualização."
+        action={
+          <MetricPill
+            label={`${completedSummary.completed} de ${completedSummary.total} concluídas`}
+            tone="primary"
+          />
+        }
+      >
         {mealMutation.isError ? (
           <Alert severity="error">
-            {getErrorMessage(mealMutation.error, "Não foi possível atualizar o status da refeição.")}
+            {getErrorMessage(mealMutation.error, "Não foi possível salvar as alterações.")}
           </Alert>
         ) : null}
 
         {substitutionMutation.isSuccess ? (
-          <Alert severity="success">
-            Solicitação enviada para o nutricionista. A estimativa aproximada foi gerada com sucesso.
-          </Alert>
+          <Alert severity="success">Solicitação enviada com sucesso.</Alert>
         ) : null}
 
         {substitutionMutation.isError ? (
           <Alert severity="error">
-            {getErrorMessage(substitutionMutation.error, "Não foi possível enviar a solicitação de substituição.")}
+            {getErrorMessage(
+              substitutionMutation.error,
+              "Não foi possível enviar a solicitação.",
+            )}
           </Alert>
         ) : null}
 
@@ -358,10 +329,7 @@ export function PatientHomeScreen() {
                 key={meal.id}
                 meal={meal}
                 substitutionRequest={latestSubstitutionByMealId[meal.id] ?? null}
-                isPending={
-                  mealMutation.isPending &&
-                  mealMutation.variables?.mealId === meal.id
-                }
+                isPending={mealMutation.isPending && mealMutation.variables?.mealId === meal.id}
                 onToggle={(mealId, completed) => {
                   mealMutation.mutate({ mealId, completed });
                 }}
@@ -375,20 +343,21 @@ export function PatientHomeScreen() {
             ))}
           </Stack>
         )}
-      </Stack>
+      </SectionCard>
 
       {selectedMeal ? (
         <MealSubstitutionRequestDialog
           mealName={selectedMeal.name}
           open
-          isSubmitting={
-            uploadImageMutation.isPending || substitutionMutation.isPending
-          }
+          isSubmitting={uploadImageMutation.isPending || substitutionMutation.isPending}
           errorMessage={
             (uploadImageMutation.isError &&
               getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
             (substitutionMutation.isError &&
-              getErrorMessage(substitutionMutation.error, "Não foi possível enviar a solicitação de substituição.")) ||
+              getErrorMessage(
+                substitutionMutation.error,
+                "Não foi possível enviar a solicitação.",
+              )) ||
             null
           }
           onClose={() => setSelectedMealId(null)}
@@ -403,52 +372,43 @@ export function PatientHomeScreen() {
       ) : null}
 
       {selectedSubstitution ? (
-        <Dialog
-          open
-          onClose={() => setSelectedSubstitutionId(null)}
-          fullWidth
-          maxWidth="sm"
-        >
+        <Dialog open onClose={() => setSelectedSubstitutionId(null)} fullWidth maxWidth="md">
           <DialogTitle>Detalhes da solicitação</DialogTitle>
           <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              <Box
-                component="img"
+            <Stack spacing={2.5} sx={{ pt: 1 }}>
+              <ImagePreview
                 src={selectedSubstitution.imageUrl}
-                alt={`Solicitação de substituição para ${selectedSubstitution.meal.name}`}
-                sx={{
-                  width: "100%",
-                  maxHeight: 320,
-                  objectFit: "cover",
-                  borderRadius: 3,
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                }}
+                alt={`Foto enviada para ${selectedSubstitution.meal.name}`}
+                maxHeight={360}
               />
 
-              <div>
-                <Typography variant="subtitle2">Refeição</Typography>
-                <Typography color="text.secondary">
-                  {selectedSubstitution.meal.name}
-                </Typography>
-              </div>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2">Refeição</Typography>
+                  <Typography color="text.secondary">{selectedSubstitution.meal.name}</Typography>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2">Observação do paciente</Typography>
+                  <Typography color="text.secondary">
+                    {selectedSubstitution.note || "Nenhuma observação informada."}
+                  </Typography>
+                </Box>
+              </Stack>
 
-              <div>
-                <Typography variant="subtitle2">Sua observação</Typography>
-                <Typography color="text.secondary">
-                  {selectedSubstitution.note || "Nenhuma observação informada."}
-                </Typography>
-              </div>
-
-              <div>
+              <Box>
                 <Typography variant="subtitle2">Feedback do nutricionista</Typography>
                 <Typography color="text.secondary">
                   {selectedSubstitution.nutritionistFeedback || "Nenhum feedback ainda."}
                 </Typography>
-              </div>
+              </Box>
 
-              <MealSubstitutionEstimationPanel
-                substitution={selectedSubstitution}
-              />
+              <SectionCard
+                title="Estimativa da IA"
+                description="Visualização aproximada baseada na imagem enviada."
+                variant="outlined"
+              >
+                <MealSubstitutionEstimationPanel substitution={selectedSubstitution} />
+              </SectionCard>
             </Stack>
           </DialogContent>
           <DialogActions>

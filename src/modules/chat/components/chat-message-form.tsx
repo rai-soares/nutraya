@@ -2,19 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import {
-  Alert,
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ImageIcon from "@mui/icons-material/Image";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import { Alert, Box, Button, Dialog, DialogContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -64,6 +55,7 @@ export function ChatMessageForm({
     name: "text",
     defaultValue: "",
   });
+
   const previewUrl = useMemo(
     () => (selectedFile ? URL.createObjectURL(selectedFile) : null),
     [selectedFile],
@@ -120,9 +112,7 @@ export function ChatMessageForm({
         reset({ text: "" });
       })}
     >
-      {errorMessage || localError ? (
-        <Alert severity="error">{errorMessage ?? localError}</Alert>
-      ) : null}
+      {errorMessage || localError ? <Alert severity="error">{errorMessage ?? localError}</Alert> : null}
 
       <input
         key={fileInputKey}
@@ -152,14 +142,8 @@ export function ChatMessageForm({
 
       {selectedFile && previewUrl ? (
         <Stack spacing={1.5}>
-          <Typography variant="subtitle2">Pré-visualização da imagem</Typography>
-          <Box
-            sx={{
-              position: "relative",
-              width: "fit-content",
-              maxWidth: "100%",
-            }}
-          >
+          <Typography variant="subtitle2">Imagem selecionada</Typography>
+          <Box sx={{ position: "relative", width: "fit-content", maxWidth: "100%" }}>
             <Box
               component="img"
               src={previewUrl}
@@ -170,7 +154,7 @@ export function ChatMessageForm({
                 maxWidth: 280,
                 maxHeight: 280,
                 objectFit: "cover",
-                borderRadius: 2,
+                borderRadius: 4,
                 cursor: "pointer",
                 border: (theme) => `1px solid ${theme.palette.divider}`,
               }}
@@ -197,10 +181,8 @@ export function ChatMessageForm({
       ) : null}
 
       <TextField
-        label={selectedFile ? "Adicionar legenda (opcional)" : "Digite uma mensagem"}
-        placeholder={
-          selectedFile ? "Adicione uma legenda para esta imagem" : "Digite sua mensagem aqui"
-        }
+        label={selectedFile ? "Adicionar legenda" : "Digite uma mensagem"}
+        placeholder={selectedFile ? "Adicione uma legenda opcional" : "Digite uma mensagem"}
         multiline
         minRows={3}
         fullWidth
@@ -231,9 +213,7 @@ export function ChatMessageForm({
           variant="outlined"
           startIcon={<ImageIcon />}
           disabled={isSubmitting}
-          onClick={() =>
-            document.getElementById("chat-image-upload-input")?.click()
-          }
+          onClick={() => document.getElementById("chat-image-upload-input")?.click()}
           sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
         >
           {selectedFile ? "Trocar imagem" : "Selecionar imagem"}
@@ -242,39 +222,22 @@ export function ChatMessageForm({
         <Button
           type="submit"
           variant="contained"
-          disabled={
-            isSubmitting || (!selectedFile && (textValue ?? "").trim().length === 0)
-          }
+          endIcon={<SendRoundedIcon />}
+          disabled={isSubmitting || (!selectedFile && (textValue ?? "").trim().length === 0)}
           sx={{ alignSelf: { xs: "stretch", sm: "flex-end" } }}
         >
-          {isSubmitting
-            ? selectedFile
-              ? "Enviando imagem..."
-              : "Enviando..."
-            : selectedFile
-              ? "Enviar imagem"
-              : "Enviar"}
+          {isSubmitting ? "Enviando..." : "Enviar"}
         </Button>
       </Stack>
 
-      <Dialog
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogContent sx={{ p: 1.5 }}>
           {previewUrl ? (
             <Box
               component="img"
               src={previewUrl}
               alt="Imagem ampliada do chat"
-              sx={{
-                width: "100%",
-                maxHeight: "80vh",
-                objectFit: "contain",
-                borderRadius: 2,
-              }}
+              sx={{ width: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 2 }}
             />
           ) : null}
         </DialogContent>

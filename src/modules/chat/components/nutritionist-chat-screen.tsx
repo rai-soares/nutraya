@@ -2,23 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Alert,
-  Avatar,
-  Badge,
-  Button,
-  Chip,
-  Grid,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert, Avatar, Badge, Button, Grid, Stack, Typography } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
+import { SectionCard } from "@/modules/app-shell/components/section-card";
 import {
   getNutritionistConversation,
   listNutritionistConversations,
@@ -27,10 +20,7 @@ import {
   sendNutritionistMessage,
   uploadImage,
 } from "@/modules/chat/chat.api";
-import {
-  ChatMessageForm,
-  type ChatMessageFormSubmitValues,
-} from "@/modules/chat/components/chat-message-form";
+import { ChatMessageForm, type ChatMessageFormSubmitValues } from "@/modules/chat/components/chat-message-form";
 import { ChatMessageThread } from "@/modules/chat/components/chat-message-thread";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
@@ -38,7 +28,7 @@ const CHAT_POLLING_INTERVAL_MS = 3000;
 
 function formatConversationTime(value: string | null): string {
   if (!value) {
-    return "Sem mensagens";
+    return "Nenhuma mensagem ainda";
   }
 
   return new Intl.DateTimeFormat("pt-BR", {
@@ -93,8 +83,7 @@ export function NutritionistChatScreen() {
   const conversationQuery = useQuery({
     queryKey: ["nutritionist-chat-conversation", effectiveSelectedPatientId],
     enabled: Boolean(token && effectiveSelectedPatientId),
-    queryFn: () =>
-      getNutritionistConversation(effectiveSelectedPatientId!, authOptions),
+    queryFn: () => getNutritionistConversation(effectiveSelectedPatientId!, authOptions),
     refetchInterval: CHAT_POLLING_INTERVAL_MS,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
@@ -103,8 +92,7 @@ export function NutritionistChatScreen() {
   const messagesQuery = useQuery({
     queryKey: ["nutritionist-chat-messages", effectiveSelectedPatientId],
     enabled: Boolean(token && effectiveSelectedPatientId),
-    queryFn: () =>
-      listNutritionistMessages(effectiveSelectedPatientId!, authOptions),
+    queryFn: () => listNutritionistMessages(effectiveSelectedPatientId!, authOptions),
     refetchInterval: CHAT_POLLING_INTERVAL_MS,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
@@ -127,11 +115,7 @@ export function NutritionistChatScreen() {
         throw new Error("Selecione uma conversa de paciente primeiro.");
       }
 
-      return sendNutritionistMessage(
-        effectiveSelectedPatientId,
-        values,
-        authOptions,
-      );
+      return sendNutritionistMessage(effectiveSelectedPatientId, values, authOptions);
     },
     onSuccess: async () => {
       await Promise.all([
@@ -139,10 +123,7 @@ export function NutritionistChatScreen() {
           queryKey: ["nutritionist-chat-conversations", session?.user.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: [
-            "nutritionist-chat-conversation",
-            effectiveSelectedPatientId,
-          ],
+          queryKey: ["nutritionist-chat-conversation", effectiveSelectedPatientId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["nutritionist-chat-messages", effectiveSelectedPatientId],
@@ -161,10 +142,7 @@ export function NutritionistChatScreen() {
         throw new Error("Selecione uma conversa de paciente primeiro.");
       }
 
-      return markNutritionistMessagesAsRead(
-        effectiveSelectedPatientId,
-        authOptions,
-      );
+      return markNutritionistMessagesAsRead(effectiveSelectedPatientId, authOptions);
     },
     onSuccess: async () => {
       await Promise.all([
@@ -172,10 +150,7 @@ export function NutritionistChatScreen() {
           queryKey: ["nutritionist-chat-conversations", session?.user.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: [
-            "nutritionist-chat-conversation",
-            effectiveSelectedPatientId,
-          ],
+          queryKey: ["nutritionist-chat-conversation", effectiveSelectedPatientId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["nutritionist-chat-messages", effectiveSelectedPatientId],
@@ -186,8 +161,7 @@ export function NutritionistChatScreen() {
 
   const unreadIncomingMessages =
     messagesQuery.data?.filter(
-      (message) =>
-        message.receiverId === session?.user.id && message.readAt === null,
+      (message) => message.receiverId === session?.user.id && message.readAt === null,
     ).length ?? 0;
 
   useEffect(() => {
@@ -209,14 +183,14 @@ export function NutritionistChatScreen() {
   ]);
 
   if (conversationsQuery.isLoading) {
-    return <LoadingState message="Carregando conversas..." />;
+    return <LoadingState message="Carregando..." />;
   }
 
   if (conversationsQuery.isError) {
     return (
       <ErrorState
         title="Chat indisponível"
-        message={getErrorMessage(conversationsQuery.error, "Não foi possível carregar as conversas.")}
+        message={getErrorMessage(conversationsQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void conversationsQuery.refetch()}
       />
     );
@@ -225,8 +199,8 @@ export function NutritionistChatScreen() {
   if (!conversationsQuery.data || conversationsQuery.data.length === 0) {
     return (
       <EmptyState
-        title="Nenhuma mensagem ainda."
-        description="As conversas com pacientes vinculados aparecerão aqui automaticamente."
+        title="Nenhuma mensagem ainda"
+        description="As conversas com pacientes vinculados aparecerão aqui."
       />
     );
   }
@@ -234,131 +208,128 @@ export function NutritionistChatScreen() {
   return (
     <Stack spacing={3}>
       <PageHeader
+        eyebrow="Mensagens"
         title="Chat"
         subtitle="Acompanhe pacientes vinculados em conversas diretas e simples."
       />
 
       {markReadMutation.isError ? (
         <Alert severity="error">
-          {getErrorMessage(markReadMutation.error, "Não foi possível atualizar a leitura das mensagens.")}
+          {getErrorMessage(markReadMutation.error, "Não foi possível salvar as alterações.")}
         </Alert>
       ) : null}
 
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, md: 4 }}>
-          <Stack spacing={2}>
-            {conversationsQuery.data.map((conversation) => {
-              const isSelected =
-                conversation.patientId === effectiveSelectedPatientId;
+          <SectionCard title="Conversas" description="Selecione um paciente para abrir as mensagens.">
+            <Stack spacing={1.5}>
+              {conversationsQuery.data.map((conversation) => {
+                const isSelected = conversation.patientId === effectiveSelectedPatientId;
 
-              return (
-                <AppCard
-                  key={conversation.conversationId}
-                  variant={isSelected ? undefined : "outlined"}
-                  sx={{
-                    cursor: "pointer",
-                    borderColor: isSelected ? "primary.main" : undefined,
-                  }}
-                >
-                  <Button
-                    fullWidth
-                    color="inherit"
+                return (
+                  <AppCard
+                    key={conversation.conversationId}
+                    variant={isSelected ? undefined : "outlined"}
                     sx={{
-                      justifyContent: "flex-start",
-                      textTransform: "none",
-                      p: 0,
-                    }}
-                    onClick={() => {
-                      setSelectedPatientId(conversation.patientId);
+                      cursor: "pointer",
+                      borderColor: isSelected ? "primary.main" : undefined,
+                      backgroundColor: isSelected ? "rgba(18, 116, 107, 0.06)" : undefined,
                     }}
                   >
-                    <Stack spacing={1.5} sx={{ width: "100%" }}>
-                      <Stack
-                        direction="row"
-                        spacing={1.5}
-                        sx={{ alignItems: "center", justifyContent: "space-between" }}
-                      >
-                        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                          <Avatar>{conversation.patient.name.slice(0, 1).toUpperCase()}</Avatar>
-                          <div>
-                            <Typography variant="h3">
-                              {conversation.patient.name}
-                            </Typography>
-                            <Typography color="text.secondary" variant="body2">
-                              {conversation.patient.email}
-                            </Typography>
-                          </div>
+                    <Button
+                      fullWidth
+                      color="inherit"
+                      sx={{ justifyContent: "flex-start", textTransform: "none", p: 0 }}
+                      onClick={() => {
+                        setSelectedPatientId(conversation.patientId);
+                      }}
+                    >
+                      <Stack spacing={1.25} sx={{ width: "100%" }}>
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          sx={{ alignItems: "center", justifyContent: "space-between" }}
+                        >
+                          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                            <Avatar>{conversation.patient.name.slice(0, 1).toUpperCase()}</Avatar>
+                            <div>
+                              <Typography variant="h3">{conversation.patient.name}</Typography>
+                              <Typography color="text.secondary" variant="body2">
+                                {conversation.patient.email}
+                              </Typography>
+                            </div>
+                          </Stack>
+
+                          <Badge
+                            color="primary"
+                            badgeContent={conversation.unreadCount}
+                            invisible={conversation.unreadCount === 0}
+                          />
                         </Stack>
 
-                        <Badge
-                          color="primary"
-                          badgeContent={conversation.unreadCount}
-                          invisible={conversation.unreadCount === 0}
-                        />
-                      </Stack>
+                        <Typography
+                          color="text.secondary"
+                          sx={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {conversation.lastMessageText ?? "Nenhuma mensagem ainda"}
+                        </Typography>
 
-                      <Typography
-                        color="text.secondary"
-                        sx={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {conversation.lastMessageText ?? "Nenhuma mensagem ainda"}
-                      </Typography>
-
-                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                        <Chip
-                          size="small"
-                          label={formatConversationTime(conversation.lastMessageAt)}
-                        />
+                        <MetricPill label={formatConversationTime(conversation.lastMessageAt)} tone="default" />
                       </Stack>
-                    </Stack>
-                  </Button>
-                </AppCard>
-              );
-            })}
-          </Stack>
+                    </Button>
+                  </AppCard>
+                );
+              })}
+            </Stack>
+          </SectionCard>
         </Grid>
 
         <Grid size={{ xs: 12, md: 8 }}>
           {!effectiveSelectedPatientId ? (
             <EmptyState
-              title="Selecione uma conversa"
-              description="Escolha um paciente para carregar as mensagens."
+              title="Nenhuma mensagem ainda"
+              description="As conversas com pacientes vinculados aparecerão aqui."
             />
           ) : conversationQuery.isLoading || messagesQuery.isLoading ? (
-            <LoadingState message="Carregando conversa..." />
+            <LoadingState message="Carregando..." />
           ) : conversationQuery.isError ? (
             <ErrorState
               title="Conversa indisponível"
-              message={getErrorMessage(conversationQuery.error, "Não foi possível carregar a conversa.")}
+              message={getErrorMessage(conversationQuery.error, "Não foi possível carregar os dados.")}
               onRetry={() => void conversationQuery.refetch()}
             />
           ) : messagesQuery.isError ? (
             <ErrorState
               title="Mensagens indisponíveis"
-              message={getErrorMessage(messagesQuery.error, "Não foi possível carregar as mensagens.")}
+              message={getErrorMessage(messagesQuery.error, "Não foi possível carregar os dados.")}
               onRetry={() => void messagesQuery.refetch()}
             />
           ) : conversationQuery.data && messagesQuery.data && session?.user.id ? (
             <Stack spacing={2.5}>
               <AppCard>
-                <Stack spacing={1}>
-                  <Typography variant="h3">
-                    {conversationQuery.data.patient.name}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    {conversationQuery.data.patient.email}
-                  </Typography>
-                  <Typography color="text.secondary">
-                    {selectedConversationSummary?.unreadCount
-                      ? `${selectedConversationSummary.unreadCount} mensagem${
-                          selectedConversationSummary.unreadCount === 1 ? "" : "ns"
-                        } não lida${selectedConversationSummary.unreadCount === 1 ? "" : "s"}`
-                      : "Todas as mensagens foram lidas"}
-                  </Typography>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  sx={{ justifyContent: "space-between", alignItems: { md: "center" } }}
+                >
+                  <div>
+                    <Typography variant="h3">{conversationQuery.data.patient.name}</Typography>
+                    <Typography color="text.secondary">
+                      {conversationQuery.data.patient.email}
+                    </Typography>
+                  </div>
+                  <MetricPill
+                    label={
+                      selectedConversationSummary?.unreadCount
+                        ? `${selectedConversationSummary.unreadCount} não lidas`
+                        : "Todas as mensagens foram lidas"
+                    }
+                    tone={selectedConversationSummary?.unreadCount ? "warning" : "success"}
+                  />
                 </Stack>
               </AppCard>
 
@@ -369,11 +340,9 @@ export function NutritionistChatScreen() {
                 nutritionist={conversationQuery.data.nutritionist}
               />
 
-              <AppCard>
+              <SectionCard title="Nova mensagem" description="Digite uma mensagem ou envie uma imagem.">
                 <ChatMessageForm
-                  isSubmitting={
-                    uploadImageMutation.isPending || sendMessageMutation.isPending
-                  }
+                  isSubmitting={uploadImageMutation.isPending || sendMessageMutation.isPending}
                   errorMessage={
                     (uploadImageMutation.isError &&
                       getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
@@ -387,9 +356,7 @@ export function NutritionistChatScreen() {
                       return;
                     }
 
-                    const uploadResult = await uploadImageMutation.mutateAsync(
-                      values.file,
-                    );
+                    const uploadResult = await uploadImageMutation.mutateAsync(values.file);
 
                     await sendMessageMutation.mutateAsync({
                       messageType: "IMAGE",
@@ -398,7 +365,7 @@ export function NutritionistChatScreen() {
                     });
                   }}
                 />
-              </AppCard>
+              </SectionCard>
             </Stack>
           ) : null}
         </Grid>

@@ -2,35 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
+import { SectionCard } from "@/modules/app-shell/components/section-card";
 import {
   listNutritionistMealSubstitutions,
   saveNutritionistMealSubstitutionFeedback,
 } from "@/modules/meal-substitutions/meal-substitution.api";
-import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
+import { SubstitutionCard } from "@/modules/meal-substitutions/components/substitution-card";
 import { listNutritionistPatients } from "@/modules/nutritionist/nutritionist.api";
 import type { MealSubstitution } from "@/modules/shared/types/api";
-import { formatFriendlyDate } from "@/modules/shared/utils/date";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 export function NutritionistSubstitutionRequestsScreen() {
@@ -50,11 +38,7 @@ export function NutritionistSubstitutionRequestsScreen() {
   });
 
   const substitutionsQuery = useQuery({
-    queryKey: [
-      "nutritionist-meal-substitutions",
-      session?.user.id,
-      selectedPatientId,
-    ],
+    queryKey: ["nutritionist-meal-substitutions", session?.user.id, selectedPatientId],
     enabled: Boolean(token),
     queryFn: () =>
       listNutritionistMealSubstitutions(
@@ -84,10 +68,7 @@ export function NutritionistSubstitutionRequestsScreen() {
           queryKey: ["nutritionist-meal-substitutions", session?.user.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: [
-            "nutritionist-patient",
-            activeFeedbackSubstitution?.patientId,
-          ],
+          queryKey: ["nutritionist-patient", activeFeedbackSubstitution?.patientId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["patient-meal-substitutions"],
@@ -98,21 +79,20 @@ export function NutritionistSubstitutionRequestsScreen() {
 
   const appliedCount = useMemo(
     () =>
-      (substitutionsQuery.data ?? []).filter(
-        (substitution) => substitution.appliedToDailyLog,
-      ).length,
+      (substitutionsQuery.data ?? []).filter((substitution) => substitution.appliedToDailyLog)
+        .length,
     [substitutionsQuery.data],
   );
 
   if (patientsQuery.isLoading || substitutionsQuery.isLoading) {
-    return <LoadingState message="Carregando solicitações..." />;
+    return <LoadingState message="Carregando..." />;
   }
 
   if (patientsQuery.isError) {
     return (
       <ErrorState
         title="Pacientes indisponíveis"
-        message={getErrorMessage(patientsQuery.error, "Não foi possível carregar os pacientes vinculados.")}
+        message={getErrorMessage(patientsQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void patientsQuery.refetch()}
       />
     );
@@ -121,8 +101,8 @@ export function NutritionistSubstitutionRequestsScreen() {
   if (substitutionsQuery.isError) {
     return (
       <ErrorState
-        title="Solicitações indisponíveis"
-        message={getErrorMessage(substitutionsQuery.error, "Não foi possível carregar as solicitações de substituição.")}
+        title="Substituições indisponíveis"
+        message={getErrorMessage(substitutionsQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void substitutionsQuery.refetch()}
       />
     );
@@ -132,157 +112,74 @@ export function NutritionistSubstitutionRequestsScreen() {
     <>
       <Stack spacing={3}>
         <PageHeader
-          title="Solicitações de substituição"
-          subtitle="Revise as substituições aplicadas ao progresso do paciente e deixe feedback quando necessário."
+          eyebrow="Solicitações"
+          title="Substituições"
+          subtitle="As solicitações de substituição enviadas pelos pacientes aparecerão aqui."
         />
 
         <AppCard>
           <Stack
-            direction={{ xs: "column", md: "row" }}
+            direction={{ xs: "column", lg: "row" }}
             spacing={2}
-            sx={{ justifyContent: "space-between" }}
+            sx={{ justifyContent: "space-between", alignItems: { lg: "center" } }}
           >
-            <Stack spacing={1}>
-              <Typography variant="h3">Substituições aplicadas</Typography>
-              <Typography color="text.secondary">
-                Cada solicitação mantém a foto enviada, a estimativa da IA e qualquer feedback posterior do nutricionista.
-              </Typography>
-            </Stack>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-              <Chip label={`${appliedCount} aplicadas`} color="success" />
-              <Chip
-                label={`${substitutionsQuery.data?.length ?? 0} no total`}
-                variant="outlined"
-              />
+              <MetricPill label={`${substitutionsQuery.data?.length ?? 0} no total`} tone="primary" />
+              <MetricPill label={`${appliedCount} aplicadas`} tone="success" />
             </Stack>
+
+            <TextField
+              select
+              label="Filtrar por paciente"
+              value={selectedPatientId}
+              onChange={(event) => setSelectedPatientId(event.target.value)}
+              sx={{ minWidth: { xs: "100%", sm: 280 } }}
+            >
+              <MenuItem value="all">Todos os pacientes vinculados</MenuItem>
+              {(patientsQuery.data ?? []).map((patient) => (
+                <MenuItem key={patient.patient.id} value={patient.patient.id}>
+                  {patient.patient.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Stack>
         </AppCard>
 
-        <TextField
-          select
-          label="Filtrar por paciente"
-          value={selectedPatientId}
-          onChange={(event) => setSelectedPatientId(event.target.value)}
-          sx={{ maxWidth: { xs: "100%", sm: 320 } }}
-        >
-          <MenuItem value="all">Todos os pacientes vinculados</MenuItem>
-          {(patientsQuery.data ?? []).map((patient) => (
-            <MenuItem key={patient.patient.id} value={patient.patient.id}>
-              {patient.patient.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
         {feedbackMutation.isError ? (
           <Alert severity="error">
-            {getErrorMessage(feedbackMutation.error, "Não foi possível salvar o feedback desta solicitação.")}
+            {getErrorMessage(feedbackMutation.error, "Não foi possível salvar as alterações.")}
           </Alert>
         ) : null}
 
         {!substitutionsQuery.data || substitutionsQuery.data.length === 0 ? (
           <EmptyState
-            title="Nenhuma solicitação de substituição encontrada."
-            description="As solicitações dos pacientes aparecerão aqui depois do envio."
+            title="Nenhuma solicitação encontrada"
+            description="As solicitações de substituição enviadas pelos pacientes aparecerão aqui."
           />
         ) : (
-          <Stack spacing={2}>
-            {substitutionsQuery.data.map((substitution) => (
-              <AppCard key={substitution.id}>
-                <Stack spacing={2}>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.5}
-                    sx={{ justifyContent: "space-between" }}
-                  >
-                    <div>
-                      <Typography variant="h3">{substitution.meal.name}</Typography>
-                      <Typography color="text.secondary">
-                        {substitution.patient.name}
-                      </Typography>
-                    </div>
-                    <Chip
-                      label={
-                        substitution.appliedToDailyLog
-                          ? "Aplicada ao progresso"
-                          : "Aguardando aplicação"
-                      }
-                      color={substitution.appliedToDailyLog ? "success" : "warning"}
-                      variant={substitution.appliedToDailyLog ? "filled" : "outlined"}
-                    />
-                  </Stack>
-
-                  <Stack
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={2}
-                    sx={{ alignItems: { md: "flex-start" } }}
-                  >
-                    <Stack spacing={1} sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2">Foto do paciente</Typography>
-                      <Box
-                        component="img"
-                        src={substitution.imageUrl}
-                        alt={`${substitution.patient.name} - substituição de ${substitution.meal.name}`}
-                        sx={{
-                          width: "100%",
-                          maxWidth: 360,
-                          borderRadius: 3,
-                          border: (theme) => `1px solid ${theme.palette.divider}`,
-                          objectFit: "cover",
-                        }}
-                      />
-                    </Stack>
-
-                    <Stack spacing={1.5} sx={{ flex: 1 }}>
-                      <div>
-                        <Typography variant="subtitle2">Observação do paciente</Typography>
-                        <Typography color="text.secondary">
-                          {substitution.note || "Nenhuma observação informada."}
-                        </Typography>
-                      </div>
-
-                      <div>
-                        <Typography variant="subtitle2">Feedback do nutricionista</Typography>
-                        <Typography color="text.secondary">
-                          {substitution.nutritionistFeedback || "Nenhum feedback ainda."}
-                        </Typography>
-                      </div>
-
-                      <MealSubstitutionEstimationPanel substitution={substitution} />
-
-                      {substitution.appliedToDailyLog ? (
-                        <Alert severity="success">
-                          Aplicada ao progresso em{" "}
-                          {formatFriendlyDate(substitution.applicationDate ?? "")}.
-                        </Alert>
-                      ) : null}
-
-                      <Button
-                        variant="outlined"
-                        onClick={() => {
-                          setActiveFeedbackSubstitution(substitution);
-                          setFeedback(substitution.nutritionistFeedback ?? "");
-                        }}
-                      >
-                        {substitution.nutritionistFeedback
-                          ? "Editar feedback"
-                          : "Adicionar feedback"}
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Stack>
-              </AppCard>
-            ))}
-          </Stack>
+          <SectionCard
+            title="Substituições aplicadas"
+            description="Revise a foto enviada, a estimativa da IA e o feedback do nutricionista."
+          >
+            <Stack spacing={2}>
+              {substitutionsQuery.data.map((substitution) => (
+                <SubstitutionCard
+                  key={substitution.id}
+                  substitution={substitution}
+                  onEditFeedback={() => {
+                    setActiveFeedbackSubstitution(substitution);
+                    setFeedback(substitution.nutritionistFeedback ?? "");
+                  }}
+                />
+              ))}
+            </Stack>
+          </SectionCard>
         )}
       </Stack>
 
       <Dialog
         open={Boolean(activeFeedbackSubstitution)}
-        onClose={
-          feedbackMutation.isPending
-            ? undefined
-            : () => setActiveFeedbackSubstitution(null)
-        }
+        onClose={feedbackMutation.isPending ? undefined : () => setActiveFeedbackSubstitution(null)}
         fullWidth
         maxWidth="sm"
       >
@@ -290,10 +187,11 @@ export function NutritionistSubstitutionRequestsScreen() {
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Typography color="text.secondary">
-              {activeFeedbackSubstitution?.patient.name} enviou uma solicitação de substituição para {` ${activeFeedbackSubstitution?.meal.name}`}.
+              {activeFeedbackSubstitution?.patient.name} enviou uma solicitação para{" "}
+              {activeFeedbackSubstitution?.meal.name}.
             </Typography>
             <TextField
-              label="Feedback (opcional)"
+              label="Feedback do nutricionista"
               value={feedback}
               onChange={(event) => setFeedback(event.target.value)}
               multiline

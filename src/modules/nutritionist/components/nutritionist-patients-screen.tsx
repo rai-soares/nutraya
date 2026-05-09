@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import { Alert, Button, Stack } from "@mui/material";
+import { Alert, Button, Grid, Stack } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
+import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
+import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
 import { CreatePatientDialog } from "@/modules/nutritionist/components/create-patient-dialog";
 import { PatientCard } from "@/modules/nutritionist/components/patient-card";
@@ -43,7 +45,7 @@ export function NutritionistPatientsScreen() {
   });
 
   if (patientsQuery.isLoading) {
-    return <LoadingState message="Carregando pacientes..." />;
+    return <LoadingState message="Carregando..." />;
   }
 
   if (patientsQuery.isError) {
@@ -60,18 +62,35 @@ export function NutritionistPatientsScreen() {
     <>
       <Stack spacing={3}>
         <PageHeader
+          eyebrow="Relacionamentos"
           title="Pacientes"
-          subtitle="Crie e acompanhe seus pacientes para configurar metas, plano alimentar e acompanhamento diário."
+          subtitle="Gerencie os pacientes vinculados ao seu acompanhamento."
           action={
             <Button
               variant="contained"
               startIcon={<AddRoundedIcon />}
               onClick={() => setIsDialogOpen(true)}
             >
-              Criar paciente
+              Adicionar paciente
             </Button>
           }
         />
+
+        <AppCard>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={2}
+            sx={{ justifyContent: "space-between", alignItems: { md: "center" } }}
+          >
+            <div>
+              <MetricPill
+                label={`${patientsQuery.data?.length ?? 0} pacientes vinculados`}
+                tone="primary"
+              />
+            </div>
+            <MetricPill label="Acompanhamento em um só lugar" tone="default" />
+          </Stack>
+        </AppCard>
 
         {createPatientMutation.isSuccess ? (
           <Alert severity="success">Paciente criado com sucesso.</Alert>
@@ -79,17 +98,19 @@ export function NutritionistPatientsScreen() {
 
         {!patientsQuery.data || patientsQuery.data.length === 0 ? (
           <EmptyState
-            title="Nenhum paciente cadastrado ainda."
-            description="Crie seu primeiro paciente para começar."
-            actionLabel="Criar paciente"
+            title="Nenhum paciente cadastrado"
+            description="Adicione seu primeiro paciente para configurar metas, plano alimentar e acompanhamento."
+            actionLabel="Adicionar paciente"
             onAction={() => setIsDialogOpen(true)}
           />
         ) : (
-          <Stack spacing={2}>
+          <Grid container spacing={2.5}>
             {patientsQuery.data.map((patient) => (
-              <PatientCard key={patient.id} patient={patient} />
+              <Grid key={patient.id} size={{ xs: 12, md: 6, xl: 4 }}>
+                <PatientCard patient={patient} />
+              </Grid>
             ))}
-          </Stack>
+          </Grid>
         )}
       </Stack>
 
@@ -98,7 +119,7 @@ export function NutritionistPatientsScreen() {
         isSubmitting={createPatientMutation.isPending}
         errorMessage={
           createPatientMutation.isError
-            ? getErrorMessage(createPatientMutation.error, "Não foi possível salvar o paciente.")
+            ? getErrorMessage(createPatientMutation.error, "Não foi possível salvar as alterações.")
             : null
         }
         onClose={() => setIsDialogOpen(false)}
