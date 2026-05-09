@@ -16,7 +16,9 @@ export const prismaMock = {
     findUnique: vi.fn(),
   },
   dailyMacroLog: {
+    create: vi.fn(),
     findUnique: vi.fn(),
+    update: vi.fn(),
     upsert: vi.fn(),
   },
   mealPlan: {
@@ -34,6 +36,12 @@ export const prismaMock = {
     findUnique: vi.fn(),
     update: vi.fn(),
   },
+  mealCompletion: {
+    createMany: vi.fn(),
+    delete: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+  },
 };
 
 export function resetPrismaMock() {
@@ -48,7 +56,9 @@ export function resetPrismaMock() {
   prismaMock.patientProfile.findUnique.mockReset();
   prismaMock.macroGoal.create.mockReset();
   prismaMock.macroGoal.findUnique.mockReset();
+  prismaMock.dailyMacroLog.create.mockReset();
   prismaMock.dailyMacroLog.findUnique.mockReset();
+  prismaMock.dailyMacroLog.update.mockReset();
   prismaMock.dailyMacroLog.upsert.mockReset();
   prismaMock.mealPlan.create.mockReset();
   prismaMock.mealPlan.delete.mockReset();
@@ -61,4 +71,8 @@ export function resetPrismaMock() {
   prismaMock.meal.delete.mockReset();
   prismaMock.meal.findUnique.mockReset();
   prismaMock.meal.update.mockReset();
+  prismaMock.mealCompletion.createMany.mockReset();
+  prismaMock.mealCompletion.delete.mockReset();
+  prismaMock.mealCompletion.findMany.mockReset();
+  prismaMock.mealCompletion.findUnique.mockReset();
 }

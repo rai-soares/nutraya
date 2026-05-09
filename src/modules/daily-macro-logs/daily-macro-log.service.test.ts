@@ -190,6 +190,24 @@ describe("daily macro log service", () => {
       carbsConsumed: 130,
       fatConsumed: 35,
     });
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      id: "plan-1",
+      title: "Default plan",
+      meals: [
+        {
+          id: "meal-1",
+          name: "Lunch",
+          description: "Chicken, rice and salad",
+          scheduledTime: "12:00",
+          order: 2,
+          calories: 600,
+          protein: 40,
+          carbs: 70,
+          fat: 15,
+        },
+      ],
+    });
+    prismaMock.mealCompletion.findMany.mockResolvedValue([{ mealId: "meal-1" }]);
 
     const result = await getPatientProgressByDate("patient-1", "2026-05-09");
 
@@ -219,6 +237,25 @@ describe("daily macro log service", () => {
         carbs: 59,
         fat: 58,
       },
+      mealPlan: {
+        id: "plan-1",
+        title: "Default plan",
+      },
+      meals: [
+        {
+          id: "meal-1",
+          name: "Lunch",
+          description: "Chicken, rice and salad",
+          scheduledTime: "12:00",
+          order: 2,
+          calories: 600,
+          protein: 40,
+          carbs: 70,
+          fat: 15,
+          completed: true,
+        },
+      ],
+      completedMealIds: ["meal-1"],
     });
   });
 
@@ -234,6 +271,12 @@ describe("daily macro log service", () => {
       fat: 60,
     });
     prismaMock.dailyMacroLog.findUnique.mockResolvedValue(null);
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      id: "plan-1",
+      title: "Default plan",
+      meals: [],
+    });
+    prismaMock.mealCompletion.findMany.mockResolvedValue([]);
 
     const result = await getPatientProgressByDate("patient-1", "2026-05-09");
 
@@ -252,6 +295,12 @@ describe("daily macro log service", () => {
     });
     prismaMock.macroGoal.findUnique.mockResolvedValue(null);
     prismaMock.dailyMacroLog.findUnique.mockResolvedValue(null);
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      id: "plan-1",
+      title: "Default plan",
+      meals: [],
+    });
+    prismaMock.mealCompletion.findMany.mockResolvedValue([]);
 
     await expect(
       getPatientProgressByDate("patient-1", "2026-05-09"),
@@ -261,7 +310,34 @@ describe("daily macro log service", () => {
     });
   });
 
+  it("fails progress calculation when there is no active meal plan", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValue({
+      calories: 2000,
+      protein: 140,
+      carbs: 220,
+      fat: 60,
+    });
+    prismaMock.dailyMacroLog.findUnique.mockResolvedValue(null);
+    prismaMock.mealPlan.findFirst.mockResolvedValue(null);
+    prismaMock.mealCompletion.findMany.mockResolvedValue([]);
+
+    await expect(
+      getPatientProgressByDate("patient-1", "2026-05-09"),
+    ).rejects.toMatchObject({
+      message: "Active meal plan not found.",
+      statusCode: 404,
+    });
+  });
+
   it("allows a nutritionist to view a linked patient", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
     prismaMock.patientProfile.findUnique.mockResolvedValue({
       nutritionistId: "nutri-1",
     });
@@ -272,6 +348,10 @@ describe("daily macro log service", () => {
   });
 
   it("blocks a nutritionist from viewing an unlinked patient", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
     prismaMock.patientProfile.findUnique.mockResolvedValue({
       nutritionistId: "nutri-2",
     });

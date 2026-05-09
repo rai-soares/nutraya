@@ -57,6 +57,12 @@ describe("/api/daily-macro-logs/patient/[patientId]/progress route", () => {
         carbs: 59,
         fat: 58,
       },
+      mealPlan: {
+        id: "plan-1",
+        title: "Default plan",
+      },
+      meals: [],
+      completedMealIds: [],
     });
 
     const response = await GET(
@@ -107,6 +113,12 @@ describe("/api/daily-macro-logs/patient/[patientId]/progress route", () => {
         carbs: 59,
         fat: 58,
       },
+      mealPlan: {
+        id: "plan-1",
+        title: "Default plan",
+      },
+      meals: [],
+      completedMealIds: [],
     });
 
     const response = await GET(

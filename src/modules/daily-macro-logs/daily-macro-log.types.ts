@@ -61,4 +61,21 @@ export type DailyMacroProgressDto = {
     carbs: number;
     fat: number;
   };
+  mealPlan: {
+    id: string;
+    title: string;
+  };
+  meals: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    scheduledTime: string | null;
+    order: number;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    completed: boolean;
+  }>;
+  completedMealIds: string[];
 };

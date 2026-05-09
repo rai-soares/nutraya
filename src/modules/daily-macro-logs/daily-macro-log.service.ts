@@ -82,6 +82,8 @@ export async function assertNutritionistCanViewPatient(
   nutritionistId: string,
   patientId: string,
 ): Promise<void> {
+  await assertPatientExists(patientId);
+
   const profile = await prisma.patientProfile.findUnique({
     where: { userId: patientId },
     select: { nutritionistId: true },
@@ -164,7 +166,7 @@ export async function getPatientProgressByDate(
   await assertPatientExists(patientId);
 
   const parsedDate = parseDateOnly(date);
-  const [goal, log] = await Promise.all([
+  const [goal, log, activePlan, completions] = await Promise.all([
     prisma.macroGoal.findUnique({
       where: { patientId },
       select: {
@@ -188,10 +190,49 @@ export async function getPatientProgressByDate(
         fatConsumed: true,
       },
     }),
+    prisma.mealPlan.findFirst({
+      where: {
+        patientId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        meals: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            scheduledTime: true,
+            order: true,
+            calories: true,
+            protein: true,
+            carbs: true,
+            fat: true,
+          },
+          orderBy: {
+            order: "asc",
+          },
+        },
+      },
+    }),
+    prisma.mealCompletion.findMany({
+      where: {
+        patientId,
+        date: parsedDate,
+      },
+      select: {
+        mealId: true,
+      },
+    }),
   ]);
 
   if (!goal) {
     throw new AppError("Macro goal not found.", 404);
+  }
+
+  if (!activePlan) {
+    throw new AppError("Active meal plan not found.", 404);
   }
 
   const consumed = {
@@ -200,6 +241,8 @@ export async function getPatientProgressByDate(
     carbs: log?.carbsConsumed ?? 0,
     fat: log?.fatConsumed ?? 0,
   };
+  const completedMealIds = completions.map((completion) => completion.mealId);
+  const completedMealIdSet = new Set(completedMealIds);
 
   return {
     date: formatDateOnly(parsedDate),
@@ -217,5 +260,14 @@ export async function getPatientProgressByDate(
       carbs: calculateProgressValue(goal.carbs, consumed.carbs),
       fat: calculateProgressValue(goal.fat, consumed.fat),
     },
+    mealPlan: {
+      id: activePlan.id,
+      title: activePlan.title,
+    },
+    meals: activePlan.meals.map((meal) => ({
+      ...meal,
+      completed: completedMealIdSet.has(meal.id),
+    })),
+    completedMealIds,
   };
 }

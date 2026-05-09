@@ -25,6 +25,7 @@ model User {
   dailyMacroLogs          DailyMacroLog[]  @relation("PatientDailyMacroLogs")
   mealPlansAsPatient      MealPlan[]       @relation("PatientMealPlans")
   mealPlansAsNutritionist MealPlan[]       @relation("NutritionistMealPlans")
+  mealCompletions         MealCompletion[] @relation("PatientMealCompletions")
 }
 
 model PatientProfile {
@@ -91,7 +92,24 @@ model Meal {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   mealPlan      MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  completions   MealCompletion[]
 
   @@index([mealPlanId])
   @@index([mealPlanId, order])
+}
+
+model MealCompletion {
+  id          String   @id @default(cuid())
+  patientId   String
+  mealId      String
+  date        DateTime @db.Date
+  completedAt DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  patient     User     @relation("PatientMealCompletions", fields: [patientId], references: [id], onDelete: Cascade)
+  meal        Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, mealId, date])
+  @@index([patientId, date])
+  @@index([mealId])
 }
