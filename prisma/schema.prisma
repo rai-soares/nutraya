@@ -17,6 +17,12 @@ enum MessageType {
   IMAGE
 }
 
+enum MealSubstitutionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id                      String           @id @default(cuid())
   name                    String
@@ -35,6 +41,8 @@ model User {
   nutritionistConversations Conversation[] @relation("NutritionistConversations")
   sentMessages            Message[]        @relation("SentMessages")
   receivedMessages        Message[]        @relation("ReceivedMessages")
+  mealSubstitutionsAsPatient MealSubstitution[] @relation("PatientMealSubstitutions")
+  mealSubstitutionsAsNutritionist MealSubstitution[] @relation("NutritionistMealSubstitutions")
 }
 
 model PatientProfile {
@@ -102,9 +110,31 @@ model Meal {
   updatedAt     DateTime @updatedAt
   mealPlan      MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
   completions   MealCompletion[]
+  substitutions MealSubstitution[]
 
   @@index([mealPlanId])
   @@index([mealPlanId, order])
+}
+
+model MealSubstitution {
+  id                   String                 @id @default(cuid())
+  patientId            String
+  nutritionistId       String
+  mealId               String
+  imageUrl             String
+  note                 String?
+  status               MealSubstitutionStatus @default(PENDING)
+  nutritionistFeedback String?
+  reviewedAt           DateTime?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  patient              User                   @relation("PatientMealSubstitutions", fields: [patientId], references: [id], onDelete: Cascade)
+  nutritionist         User                   @relation("NutritionistMealSubstitutions", fields: [nutritionistId], references: [id], onDelete: Restrict)
+  meal                 Meal                   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+  @@index([nutritionistId, status, createdAt])
+  @@index([mealId])
 }
 
 model MealCompletion {

@@ -34,4 +34,38 @@ describe("MealChecklistItem", () => {
 
     expect(onToggle).toHaveBeenCalledWith("meal-1", false);
   });
+
+  it("renders substitution status and handles the request action", () => {
+    const onRequestSubstitution = vi.fn();
+
+    render(
+      <ThemeProvider theme={appTheme}>
+        <MealChecklistItem
+          meal={{
+            id: "meal-1",
+            name: "Breakfast",
+            description: "Eggs and oats",
+            scheduledTime: "08:00",
+            calories: 450,
+            protein: 30,
+            carbs: 40,
+            fat: 12,
+            completed: false,
+          }}
+          substitutionRequest={{
+            id: "sub-1",
+            status: "PENDING",
+          }}
+          onToggle={vi.fn()}
+          onRequestSubstitution={onRequestSubstitution}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByText("Substitution pending")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Request substitution" }));
+
+    expect(onRequestSubstitution).toHaveBeenCalledWith("meal-1");
+  });
 });

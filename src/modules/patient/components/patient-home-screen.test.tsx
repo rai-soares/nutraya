@@ -42,19 +42,40 @@ describe("PatientHomeScreen", () => {
     useQueryClientMock.mockReturnValue({
       invalidateQueries: vi.fn(),
     });
-    useMutationMock.mockReturnValue({
-      isError: false,
-      isPending: false,
-      mutate: vi.fn(),
-      variables: null,
-    });
-    useQueryMock.mockReturnValue({
-      data: undefined,
-      error: new ApiClientError(404, { message: "Macro goal not found." }),
-      isError: true,
-      isLoading: false,
-      refetch: vi.fn(),
-    });
+    useMutationMock
+      .mockReturnValueOnce({
+        isError: false,
+        isPending: false,
+        mutate: vi.fn(),
+        mutateAsync: vi.fn(),
+        variables: null,
+      })
+      .mockReturnValueOnce({
+        isError: false,
+        isPending: false,
+        mutateAsync: vi.fn(),
+      })
+      .mockReturnValueOnce({
+        isError: false,
+        isPending: false,
+        isSuccess: false,
+        mutateAsync: vi.fn(),
+      });
+    useQueryMock
+      .mockReturnValueOnce({
+        data: undefined,
+        error: new ApiClientError(404, { message: "Macro goal not found." }),
+        isError: true,
+        isLoading: false,
+        refetch: vi.fn(),
+      })
+      .mockReturnValueOnce({
+        data: [],
+        error: null,
+        isError: false,
+        isLoading: false,
+        refetch: vi.fn(),
+      });
 
     render(
       <ThemeProvider theme={appTheme}>

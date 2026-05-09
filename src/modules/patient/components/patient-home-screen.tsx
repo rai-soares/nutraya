@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Chip, Grid, Stack, Typography } from "@mui/material";
 
@@ -11,12 +11,18 @@ import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
 import { MacroProgressCard } from "@/modules/macros/components/macro-progress-card";
+import {
+  createPatientMealSubstitution,
+  listPatientMealSubstitutions,
+} from "@/modules/meal-substitutions/meal-substitution.api";
+import { MealSubstitutionRequestDialog } from "@/modules/meal-substitutions/components/meal-substitution-request-dialog";
 import { MealChecklistItem } from "@/modules/meals/components/meal-checklist-item";
 import {
   ApiClientError,
   apiClient,
 } from "@/modules/shared/api/api-client";
-import type { DailyMacroProgress } from "@/modules/shared/types/api";
+import { uploadImage } from "@/modules/chat/chat.api";
+import type { DailyMacroProgress, MealSubstitution } from "@/modules/shared/types/api";
 import {
   formatFriendlyDate,
   getTodayIsoDate,
@@ -33,15 +39,24 @@ export function PatientHomeScreen() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const date = getTodayIsoDate();
+  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+  const token = session?.token ?? "";
+  const authOptions = { token };
 
   const progressQuery = useQuery({
     queryKey: ["patient-progress", session?.user.id, date],
-    enabled: Boolean(session?.token && session?.user.id),
+    enabled: Boolean(token && session?.user.id),
     queryFn: () =>
       apiClient.get<DailyMacroProgress>(
         `/api/daily-macro-logs/patient/${session?.user.id}/progress?date=${date}`,
-        { token: session?.token },
+        authOptions,
       ),
+  });
+
+  const substitutionsQuery = useQuery({
+    queryKey: ["patient-meal-substitutions", session?.user.id],
+    enabled: Boolean(token && session?.user.id),
+    queryFn: () => listPatientMealSubstitutions(authOptions),
   });
 
   const mealMutation = useMutation({
@@ -78,6 +93,39 @@ export function PatientHomeScreen() {
     },
   });
 
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => uploadImage(file, authOptions),
+  });
+
+  const substitutionMutation = useMutation({
+    mutationFn: async ({
+      mealId,
+      file,
+      note,
+    }: {
+      mealId: string;
+      file: File;
+      note?: string;
+    }) => {
+      const uploadResult = await uploadImageMutation.mutateAsync(file);
+
+      return createPatientMealSubstitution(
+        {
+          mealId,
+          imageUrl: uploadResult.imageUrl,
+          note,
+        },
+        authOptions,
+      );
+    },
+    onSuccess: async () => {
+      setSelectedMealId(null);
+      await queryClient.invalidateQueries({
+        queryKey: ["patient-meal-substitutions", session?.user.id],
+      });
+    },
+  });
+
   const completedSummary = useMemo(() => {
     const meals = progressQuery.data?.meals ?? [];
     const completedCount = meals.filter((meal) => meal.completed).length;
@@ -88,6 +136,25 @@ export function PatientHomeScreen() {
       pending: meals.length - completedCount,
     };
   }, [progressQuery.data?.meals]);
+
+  const latestSubstitutionByMealId = useMemo(() => {
+    return (substitutionsQuery.data ?? []).reduce<Record<string, MealSubstitution>>(
+      (accumulator, substitution) => {
+        if (!accumulator[substitution.mealId]) {
+          accumulator[substitution.mealId] = substitution;
+        }
+
+        return accumulator;
+      },
+      {},
+    );
+  }, [substitutionsQuery.data]);
+
+  const selectedMeal = useMemo(
+    () =>
+      progressQuery.data?.meals.find((meal) => meal.id === selectedMealId) ?? null,
+    [progressQuery.data?.meals, selectedMealId],
+  );
 
   const setupState = useMemo(() => {
     if (
@@ -146,6 +213,20 @@ export function PatientHomeScreen() {
             : "Unable to load progress."
         }
         onRetry={() => void progressQuery.refetch()}
+      />
+    );
+  }
+
+  if (substitutionsQuery.isError) {
+    return (
+      <ErrorState
+        title="Meal requests unavailable"
+        message={
+          substitutionsQuery.error instanceof Error
+            ? substitutionsQuery.error.message
+            : "Unable to load substitution requests."
+        }
+        onRetry={() => void substitutionsQuery.refetch()}
       />
     );
   }
@@ -223,6 +304,20 @@ export function PatientHomeScreen() {
           </Alert>
         ) : null}
 
+        {substitutionMutation.isSuccess ? (
+          <Alert severity="success">
+            Substitution request sent. Your nutritionist can now review the meal photo.
+          </Alert>
+        ) : null}
+
+        {substitutionMutation.isError ? (
+          <Alert severity="error">
+            {substitutionMutation.error instanceof Error
+              ? substitutionMutation.error.message
+              : "Unable to send the substitution request."}
+          </Alert>
+        ) : null}
+
         {progressQuery.data.meals.length === 0 ? (
           <EmptyState
             title="No meals in the active plan"
@@ -234,6 +329,7 @@ export function PatientHomeScreen() {
               <MealChecklistItem
                 key={meal.id}
                 meal={meal}
+                substitutionRequest={latestSubstitutionByMealId[meal.id] ?? null}
                 isPending={
                   mealMutation.isPending &&
                   mealMutation.variables?.mealId === meal.id
@@ -241,11 +337,41 @@ export function PatientHomeScreen() {
                 onToggle={(mealId, completed) => {
                   mealMutation.mutate({ mealId, completed });
                 }}
+                onRequestSubstitution={(mealId) => {
+                  setSelectedMealId(mealId);
+                }}
               />
             ))}
           </Stack>
         )}
       </Stack>
+
+      {selectedMeal ? (
+        <MealSubstitutionRequestDialog
+          mealName={selectedMeal.name}
+          open
+          isSubmitting={
+            uploadImageMutation.isPending || substitutionMutation.isPending
+          }
+          errorMessage={
+            (uploadImageMutation.isError &&
+              uploadImageMutation.error instanceof Error &&
+              uploadImageMutation.error.message) ||
+            (substitutionMutation.isError &&
+              substitutionMutation.error instanceof Error &&
+              substitutionMutation.error.message) ||
+            null
+          }
+          onClose={() => setSelectedMealId(null)}
+          onSubmit={async (values) => {
+            await substitutionMutation.mutateAsync({
+              mealId: selectedMeal.id,
+              file: values.file,
+              note: values.note,
+            });
+          }}
+        />
+      ) : null}
     </Stack>
   );
 }

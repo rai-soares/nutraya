@@ -1,0 +1,42 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  nutritionistMealSubstitutionQuerySchema,
+  nutritionistReviewMealSubstitutionBodySchema,
+  patientMealSubstitutionBodySchema,
+} from "@/modules/meal-substitutions/meal-substitution.types";
+
+describe("meal substitution types", () => {
+  it("accepts a patient substitution payload with an optional note", () => {
+    const result = patientMealSubstitutionBodySchema.parse({
+      mealId: "meal-1",
+      imageUrl: "https://cdn.example.com/meal.jpg",
+      note: "Can I switch this lunch?",
+    });
+
+    expect(result.note).toBe("Can I switch this lunch?");
+  });
+
+  it("rejects an invalid image URL", () => {
+    expect(() =>
+      patientMealSubstitutionBodySchema.parse({
+        mealId: "meal-1",
+        imageUrl: "not-a-url",
+      }),
+    ).toThrow("Image URL must be a valid URL.");
+  });
+
+  it("accepts an empty nutritionist review payload", () => {
+    const result = nutritionistReviewMealSubstitutionBodySchema.parse({});
+
+    expect(result.nutritionistFeedback).toBeUndefined();
+  });
+
+  it("accepts an optional patientId filter for nutritionist listing", () => {
+    const result = nutritionistMealSubstitutionQuerySchema.parse({
+      patientId: "patient-1",
+    });
+
+    expect(result.patientId).toBe("patient-1");
+  });
+});

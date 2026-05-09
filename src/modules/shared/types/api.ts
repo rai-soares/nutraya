@@ -56,6 +56,35 @@ export type Meal = {
   updatedAt: string;
 };
 
+export type MealSubstitutionStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type MealSubstitution = {
+  id: string;
+  patientId: string;
+  nutritionistId: string;
+  mealId: string;
+  imageUrl: string;
+  note: string | null;
+  status: MealSubstitutionStatus;
+  nutritionistFeedback: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  patient: {
+    id: string;
+    name: string;
+  };
+  nutritionist: {
+    id: string;
+    name: string;
+  };
+  meal: {
+    id: string;
+    name: string;
+    mealPlanId: string;
+  };
+};
+
 export type DailyMacroProgress = {
   date: string;
   goals: MacroSnapshot;

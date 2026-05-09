@@ -29,6 +29,7 @@ const navItemsByRole: Record<UserRole, NavItem[]> = {
   ],
   NUTRI: [
     { href: "/nutritionist/patients", label: "Patients" },
+    { href: "/nutritionist/substitutions", label: "Substitutions" },
     { href: "/nutritionist/chat", label: "Chat" },
   ],
 };
