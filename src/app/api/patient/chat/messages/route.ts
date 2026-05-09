@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const input = sendMessageSchema.parse(body);
-    const message = await sendPatientMessage(user.userId, input.text);
+    const message = await sendPatientMessage(user.userId, input);
 
     return jsonResponse(message, 201);
   } catch (error) {

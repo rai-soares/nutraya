@@ -61,6 +61,7 @@ describe("/api/nutritionist/chat/patients/[patientId]/messages route", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          messageType: "TEXT",
           text: "Please keep hydration high today.",
         }),
       }),
@@ -69,11 +70,36 @@ describe("/api/nutritionist/chat/patients/[patientId]/messages route", () => {
       },
     );
 
-    expect(sendNutritionistMessageMock).toHaveBeenCalledWith(
-      "nutri-1",
-      "patient-1",
-      "Please keep hydration high today.",
+    expect(sendNutritionistMessageMock).toHaveBeenCalledWith("nutri-1", "patient-1", {
+      messageType: "TEXT",
+      text: "Please keep hydration high today.",
+    });
+    expect(response.status).toBe(201);
+  });
+
+  it("sends a nutritionist image message", async () => {
+    sendNutritionistMessageMock.mockResolvedValue({
+      id: "message-2",
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/nutritionist/chat/patients/patient-1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageType: "IMAGE",
+          imageUrl: "https://cdn.example.com/progress.jpg",
+        }),
+      }),
+      {
+        params: Promise.resolve({ patientId: "patient-1" }),
+      },
     );
+
+    expect(sendNutritionistMessageMock).toHaveBeenCalledWith("nutri-1", "patient-1", {
+      messageType: "IMAGE",
+      imageUrl: "https://cdn.example.com/progress.jpg",
+    });
     expect(response.status).toBe(201);
   });
 });

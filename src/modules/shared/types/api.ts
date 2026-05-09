@@ -144,7 +144,9 @@ export type ChatMessage = {
   conversationId: string;
   senderId: string;
   receiverId: string;
-  text: string;
+  messageType: "TEXT" | "IMAGE";
+  text: string | null;
+  imageUrl: string | null;
   readAt: string | null;
   createdAt: string;
   updatedAt: string;

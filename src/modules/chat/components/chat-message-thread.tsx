@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import {
   Avatar,
+  Box,
   Chip,
+  Dialog,
+  DialogContent,
   Stack,
   Typography,
 } from "@mui/material";
@@ -31,6 +35,8 @@ export function ChatMessageThread({
   patient: ConversationParticipant;
   nutritionist: ConversationParticipant;
 }) {
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   if (messages.length === 0) {
     return (
       <AppCard>
@@ -86,8 +92,8 @@ export function ChatMessageThread({
                     minWidth: { sm: 260 },
                   }}
                 >
-                  <Typography
-                    variant="subtitle2"
+                <Typography
+                  variant="subtitle2"
                     sx={{
                       color: isOwnMessage ? "inherit" : "text.primary",
                     }}
@@ -106,14 +112,33 @@ export function ChatMessageThread({
                   </Typography>
                 </Stack>
 
-                <Typography
-                  sx={{
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {message.text}
-                </Typography>
+                {message.messageType === "IMAGE" && message.imageUrl ? (
+                  <Box
+                    component="img"
+                    src={message.imageUrl}
+                    alt="Chat image"
+                    onClick={() => setPreviewImage(message.imageUrl)}
+                    sx={{
+                      width: "100%",
+                      maxWidth: { xs: 240, sm: 320 },
+                      maxHeight: 320,
+                      objectFit: "cover",
+                      borderRadius: 2,
+                      cursor: "pointer",
+                    }}
+                  />
+                ) : null}
+
+                {message.text ? (
+                  <Typography
+                    sx={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {message.text}
+                  </Typography>
+                ) : null}
 
                 {isOwnMessage ? (
                   <Chip
@@ -139,6 +164,29 @@ export function ChatMessageThread({
           </Stack>
         );
       })}
+
+      <Dialog
+        open={Boolean(previewImage)}
+        onClose={() => setPreviewImage(null)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogContent sx={{ p: 1.5 }}>
+          {previewImage ? (
+            <Box
+              component="img"
+              src={previewImage}
+              alt="Expanded chat image"
+              sx={{
+                width: "100%",
+                maxHeight: "80vh",
+                objectFit: "contain",
+                borderRadius: 2,
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }

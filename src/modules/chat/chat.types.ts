@@ -3,9 +3,23 @@ import { z } from "zod";
 const requiredText = (field: string) =>
   z.string().trim().min(1, `${field} is required.`);
 
-export const sendMessageSchema = z.object({
-  text: requiredText("Message text").max(2000, "Message text is too long."),
-});
+const optionalCaption = z
+  .string()
+  .trim()
+  .max(2000, "Message text is too long.")
+  .optional();
+
+export const sendMessageSchema = z.discriminatedUnion("messageType", [
+  z.object({
+    messageType: z.literal("TEXT"),
+    text: requiredText("Message text").max(2000, "Message text is too long."),
+  }),
+  z.object({
+    messageType: z.literal("IMAGE"),
+    imageUrl: requiredText("Image URL").url("Image URL must be a valid URL."),
+    text: optionalCaption,
+  }),
+]);
 
 export const patientConversationParamSchema = z.object({
   patientId: requiredText("Patient ID"),
@@ -52,7 +66,9 @@ export type MessageDto = {
   conversationId: string;
   senderId: string;
   receiverId: string;
-  text: string;
+  messageType: "TEXT" | "IMAGE";
+  text: string | null;
+  imageUrl: string | null;
   readAt: string | null;
   createdAt: string;
   updatedAt: string;

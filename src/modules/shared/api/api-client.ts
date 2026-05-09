@@ -18,10 +18,28 @@ type RequestOptions = Omit<RequestInit, "body" | "headers"> & {
   headers?: HeadersInit;
 };
 
+function isBodyInit(body: unknown): body is BodyInit {
+  return (
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    body instanceof Blob ||
+    typeof body === "string" ||
+    body instanceof ArrayBuffer ||
+    ArrayBuffer.isView(body) ||
+    body instanceof ReadableStream
+  );
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers = new Headers(options.headers);
+  const body =
+    options.body === undefined
+      ? undefined
+      : isBodyInit(options.body)
+        ? options.body
+        : JSON.stringify(options.body);
 
-  if (options.body !== undefined) {
+  if (options.body !== undefined && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -32,7 +50,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(path, {
     ...options,
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: body as BodyInit | undefined,
   });
 
   if (response.status === 204) {

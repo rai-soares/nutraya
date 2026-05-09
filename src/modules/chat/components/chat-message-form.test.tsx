@@ -24,6 +24,7 @@ describe("ChatMessageForm", () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
+        messageType: "TEXT",
         text: "Hello coach",
       });
     });

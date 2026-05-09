@@ -54,15 +54,41 @@ describe("/api/patient/chat/messages route", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          messageType: "TEXT",
           text: "Checking in",
         }),
       }),
     );
 
-    expect(sendPatientMessageMock).toHaveBeenCalledWith(
-      "patient-1",
-      "Checking in",
+    expect(sendPatientMessageMock).toHaveBeenCalledWith("patient-1", {
+      messageType: "TEXT",
+      text: "Checking in",
+    });
+    expect(response.status).toBe(201);
+  });
+
+  it("sends a patient image message", async () => {
+    sendPatientMessageMock.mockResolvedValue({
+      id: "message-2",
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/patient/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messageType: "IMAGE",
+          imageUrl: "https://cdn.example.com/lunch.jpg",
+          text: "Lunch",
+        }),
+      }),
     );
+
+    expect(sendPatientMessageMock).toHaveBeenCalledWith("patient-1", {
+      messageType: "IMAGE",
+      imageUrl: "https://cdn.example.com/lunch.jpg",
+      text: "Lunch",
+    });
     expect(response.status).toBe(201);
   });
 
@@ -72,6 +98,7 @@ describe("/api/patient/chat/messages route", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          messageType: "TEXT",
           text: "   ",
         }),
       }),

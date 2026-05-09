@@ -25,8 +25,12 @@ import {
   listNutritionistMessages,
   markNutritionistMessagesAsRead,
   sendNutritionistMessage,
+  uploadImage,
 } from "@/modules/chat/chat.api";
-import { ChatMessageForm } from "@/modules/chat/components/chat-message-form";
+import {
+  ChatMessageForm,
+  type ChatMessageFormSubmitValues,
+} from "@/modules/chat/components/chat-message-form";
 import { ChatMessageThread } from "@/modules/chat/components/chat-message-thread";
 
 const CHAT_POLLING_INTERVAL_MS = 3000;
@@ -106,7 +110,18 @@ export function NutritionistChatScreen() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (values: { text: string }) => {
+    mutationFn: async (
+      values:
+        | {
+            messageType: "TEXT";
+            text: string;
+          }
+        | {
+            messageType: "IMAGE";
+            imageUrl: string;
+            text?: string;
+          },
+    ) => {
       if (!effectiveSelectedPatientId) {
         throw new Error("Select a patient conversation first.");
       }
@@ -133,6 +148,10 @@ export function NutritionistChatScreen() {
         }),
       ]);
     },
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => uploadImage(file, authOptions),
   });
 
   const markReadMutation = useMutation({
@@ -365,15 +384,33 @@ export function NutritionistChatScreen() {
 
               <AppCard>
                 <ChatMessageForm
-                  isSubmitting={sendMessageMutation.isPending}
-                  errorMessage={
-                    sendMessageMutation.isError &&
-                    sendMessageMutation.error instanceof Error
-                      ? sendMessageMutation.error.message
-                      : null
+                  isSubmitting={
+                    uploadImageMutation.isPending || sendMessageMutation.isPending
                   }
-                  onSubmit={async (values) => {
-                    await sendMessageMutation.mutateAsync(values);
+                  errorMessage={
+                    (uploadImageMutation.isError &&
+                      uploadImageMutation.error instanceof Error &&
+                      uploadImageMutation.error.message) ||
+                    (sendMessageMutation.isError &&
+                      sendMessageMutation.error instanceof Error
+                      ? sendMessageMutation.error.message
+                      : null)
+                  }
+                  onSubmit={async (values: ChatMessageFormSubmitValues) => {
+                    if (values.messageType === "TEXT") {
+                      await sendMessageMutation.mutateAsync(values);
+                      return;
+                    }
+
+                    const uploadResult = await uploadImageMutation.mutateAsync(
+                      values.file,
+                    );
+
+                    await sendMessageMutation.mutateAsync({
+                      messageType: "IMAGE",
+                      imageUrl: uploadResult.imageUrl,
+                      text: values.text,
+                    });
                   }}
                 />
               </AppCard>

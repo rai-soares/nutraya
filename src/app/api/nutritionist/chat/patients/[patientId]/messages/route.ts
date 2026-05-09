@@ -42,11 +42,7 @@ export async function POST(request: Request, context: RouteContext) {
     const { patientId } = patientConversationParamSchema.parse(params);
     const body = await request.json();
     const input = sendMessageSchema.parse(body);
-    const message = await sendNutritionistMessage(
-      user.userId,
-      patientId,
-      input.text,
-    );
+    const message = await sendNutritionistMessage(user.userId, patientId, input);
 
     return jsonResponse(message, 201);
   } catch (error) {

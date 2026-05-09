@@ -10,8 +10,19 @@ type AuthOptions = {
   token: string;
 };
 
-export type SendChatMessagePayload = {
-  text: string;
+export type SendChatMessagePayload =
+  | {
+      messageType: "TEXT";
+      text: string;
+    }
+  | {
+      messageType: "IMAGE";
+      imageUrl: string;
+      text?: string;
+    };
+
+export type UploadImageResponse = {
+  imageUrl: string;
 };
 
 export function getPatientConversation(options: AuthOptions) {
@@ -83,6 +94,17 @@ export function markNutritionistMessagesAsRead(
   return apiClient.post<MarkMessagesReadResponse>(
     `/api/nutritionist/chat/patients/${patientId}/read`,
     undefined,
+    options,
+  );
+}
+
+export async function uploadImage(file: File, options: AuthOptions) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiClient.post<UploadImageResponse>(
+    "/api/uploads/images",
+    formData,
     options,
   );
 }

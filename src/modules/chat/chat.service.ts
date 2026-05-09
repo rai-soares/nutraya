@@ -13,6 +13,7 @@ import type {
   ConversationParticipantDto,
   MarkMessagesReadDto,
   MessageDto,
+  SendMessageInput,
 } from "./chat.types";
 
 const participantSelect = {
@@ -43,7 +44,9 @@ const messageSelect = {
   conversationId: true,
   senderId: true,
   receiverId: true,
+  messageType: true,
   text: true,
+  imageUrl: true,
   readAt: true,
   createdAt: true,
   updatedAt: true,
@@ -222,7 +225,7 @@ async function sendMessage(
   conversation: ConversationRecord,
   senderId: string,
   receiverId: string,
-  text: string,
+  input: SendMessageInput,
 ): Promise<MessageDto> {
   const isValidDirection =
     (senderId === conversation.patientId &&
@@ -234,14 +237,29 @@ async function sendMessage(
     throw new AppError("Message participants do not match the conversation.", 400);
   }
 
+  if (input.messageType === "TEXT" && !input.text.trim()) {
+    throw new AppError("Message text is required.", 400);
+  }
+
+  if (input.messageType === "IMAGE" && !input.imageUrl.trim()) {
+    throw new AppError("Image URL is required.", 400);
+  }
+
   const sentAt = new Date();
+  const lastMessageText =
+    input.messageType === "IMAGE"
+      ? input.text?.trim() || "[Image]"
+      : input.text;
+
   const message = await prisma.$transaction(async (tx) => {
     const createdMessage = await tx.message.create({
       data: {
         conversationId: conversation.id,
         senderId,
         receiverId,
-        text,
+        messageType: input.messageType,
+        text: input.text?.trim() || null,
+        imageUrl: input.messageType === "IMAGE" ? input.imageUrl : null,
         createdAt: sentAt,
       },
       select: messageSelect,
@@ -250,7 +268,7 @@ async function sendMessage(
     await tx.conversation.update({
       where: { id: conversation.id },
       data: {
-        lastMessageText: text,
+        lastMessageText,
         lastMessageAt: sentAt,
       },
     });
@@ -302,12 +320,12 @@ export async function listPatientMessages(
 
 export async function sendPatientMessage(
   patientId: string,
-  text: string,
+  input: SendMessageInput,
 ): Promise<MessageDto> {
   const nutritionistId = await getLinkedNutritionistIdForPatient(patientId);
   const conversation = await ensureConversation(patientId, nutritionistId);
 
-  return sendMessage(conversation, patientId, nutritionistId, text);
+  return sendMessage(conversation, patientId, nutritionistId, input);
 }
 
 export async function markPatientMessagesAsRead(
@@ -391,13 +409,13 @@ export async function listNutritionistConversationMessages(
 export async function sendNutritionistMessage(
   nutritionistId: string,
   patientId: string,
-  text: string,
+  input: SendMessageInput,
 ): Promise<MessageDto> {
   await assertNutritionistCanAccessPatient(nutritionistId, patientId);
 
   const conversation = await ensureConversation(patientId, nutritionistId);
 
-  return sendMessage(conversation, nutritionistId, patientId, text);
+  return sendMessage(conversation, nutritionistId, patientId, input);
 }
 
 export async function markNutritionistConversationAsRead(

@@ -90,7 +90,9 @@ describe("chat service", () => {
         conversationId: "conversation-1",
         senderId: "nutri-1",
         receiverId: "patient-1",
+        messageType: "TEXT",
         text: "How are you feeling today?",
+        imageUrl: null,
         readAt: null,
         createdAt,
         updatedAt,
@@ -115,20 +117,27 @@ describe("chat service", () => {
       conversationId: "conversation-1",
       senderId: "patient-1",
       receiverId: "nutri-1",
+      messageType: "TEXT",
       text: "Lunch is done.",
+      imageUrl: null,
       readAt: null,
       createdAt,
       updatedAt,
     });
 
-    const result = await sendPatientMessage("patient-1", "Lunch is done.");
+    const result = await sendPatientMessage("patient-1", {
+      messageType: "TEXT",
+      text: "Lunch is done.",
+    });
 
     expect(prismaMock.message.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         conversationId: "conversation-1",
         senderId: "patient-1",
         receiverId: "nutri-1",
+        messageType: "TEXT",
         text: "Lunch is done.",
+        imageUrl: null,
       }),
       select: expect.any(Object),
     });
@@ -140,6 +149,49 @@ describe("chat service", () => {
       },
     });
     expect(result.receiverId).toBe("nutri-1");
+  });
+
+  it("sends a patient image message and falls back conversation preview to [Image]", async () => {
+    prismaMock.patientProfile.findUnique.mockResolvedValue({
+      id: "profile-1",
+      userId: "patient-1",
+      nutritionistId: "nutri-1",
+    });
+    prismaMock.conversation.findUnique.mockResolvedValue(buildConversationRecord());
+    prismaMock.message.create.mockResolvedValue({
+      id: "message-2",
+      conversationId: "conversation-1",
+      senderId: "patient-1",
+      receiverId: "nutri-1",
+      messageType: "IMAGE",
+      text: null,
+      imageUrl: "https://cdn.example.com/lunch.jpg",
+      readAt: null,
+      createdAt,
+      updatedAt,
+    });
+
+    const result = await sendPatientMessage("patient-1", {
+      messageType: "IMAGE",
+      imageUrl: "https://cdn.example.com/lunch.jpg",
+    });
+
+    expect(prismaMock.message.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        messageType: "IMAGE",
+        text: null,
+        imageUrl: "https://cdn.example.com/lunch.jpg",
+      }),
+      select: expect.any(Object),
+    });
+    expect(prismaMock.conversation.update).toHaveBeenCalledWith({
+      where: { id: "conversation-1" },
+      data: {
+        lastMessageText: "[Image]",
+        lastMessageAt: expect.any(Date),
+      },
+    });
+    expect(result.imageUrl).toBe("https://cdn.example.com/lunch.jpg");
   });
 
   it("lists nutritionist conversations for linked patients with unread counts", async () => {
