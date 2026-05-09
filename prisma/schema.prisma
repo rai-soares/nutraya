@@ -22,6 +22,7 @@ model User {
   patientProfile   PatientProfile?  @relation("PatientUserProfile")
   assignedPatients PatientProfile[] @relation("NutritionistPatients")
   macroGoal        MacroGoal?       @relation("PatientMacroGoal")
+  dailyMacroLogs   DailyMacroLog[]  @relation("PatientDailyMacroLogs")
 }
 
 model PatientProfile {
@@ -40,4 +41,19 @@ model MacroGoal {
   carbs     Int
   fat       Int
   patient   User   @relation("PatientMacroGoal", fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model DailyMacroLog {
+  id               String   @id @default(cuid())
+  patientId        String
+  date             DateTime @db.Date
+  caloriesConsumed Int
+  proteinConsumed  Int
+  carbsConsumed    Int
+  fatConsumed      Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  patient          User     @relation("PatientDailyMacroLogs", fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, date])
 }

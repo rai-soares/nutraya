@@ -14,6 +14,10 @@ export const prismaMock = {
     create: vi.fn(),
     findUnique: vi.fn(),
   },
+  dailyMacroLog: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+  },
 };
 
 export function resetPrismaMock() {
@@ -24,4 +28,6 @@ export function resetPrismaMock() {
   prismaMock.patientProfile.findUnique.mockReset();
   prismaMock.macroGoal.create.mockReset();
   prismaMock.macroGoal.findUnique.mockReset();
+  prismaMock.dailyMacroLog.findUnique.mockReset();
+  prismaMock.dailyMacroLog.upsert.mockReset();
 }
