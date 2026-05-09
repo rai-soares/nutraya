@@ -23,8 +23,14 @@ type NavItem = {
 };
 
 const navItemsByRole: Record<UserRole, NavItem[]> = {
-  PATIENT: [{ href: "/patient", label: "Home" }],
-  NUTRI: [{ href: "/nutritionist/patients", label: "Patients" }],
+  PATIENT: [
+    { href: "/patient", label: "Home" },
+    { href: "/patient/chat", label: "Chat" },
+  ],
+  NUTRI: [
+    { href: "/nutritionist/patients", label: "Patients" },
+    { href: "/nutritionist/chat", label: "Chat" },
+  ],
 };
 
 export function AppLayout({

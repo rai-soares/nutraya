@@ -107,3 +107,49 @@ export type MealCompletionSummary = {
   pendingMeals: number;
   completedMealIds: string[];
 };
+
+export type ConversationParticipant = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+};
+
+export type Conversation = {
+  id: string;
+  patientId: string;
+  nutritionistId: string;
+  lastMessageText: string | null;
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  unreadCount: number;
+  patient: ConversationParticipant;
+  nutritionist: ConversationParticipant;
+};
+
+export type ConversationListItem = {
+  conversationId: string;
+  patientId: string;
+  nutritionistId: string;
+  lastMessageText: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  patient: ConversationParticipant;
+  nutritionist: ConversationParticipant;
+};
+
+export type ChatMessage = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  readAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MarkMessagesReadResponse = {
+  updatedCount: number;
+};

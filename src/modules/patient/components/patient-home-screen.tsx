@@ -176,7 +176,7 @@ export function PatientHomeScreen() {
           }}
         >
           <div>
-            <Typography variant="h3">Today's progress</Typography>
+            <Typography variant="h3">Today&apos;s progress</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
               Active meal plan: {progressQuery.data.mealPlan.title}
             </Typography>
@@ -211,7 +211,7 @@ export function PatientHomeScreen() {
 
       <Stack spacing={2}>
         <PageHeader
-          title="Today's meals"
+          title="Today&apos;s meals"
           subtitle="Check meals off as you complete them. Daily macros update automatically."
         />
 
