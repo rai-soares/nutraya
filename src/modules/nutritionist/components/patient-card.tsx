@@ -24,7 +24,7 @@ export function PatientCard({ patient }: { patient: NutritionistPatient }) {
               <Typography color="text.secondary">{patient.patient.email}</Typography>
             </div>
           </Stack>
-          <Chip label="Linked patient" color="primary" variant="outlined" />
+          <Chip label="Paciente vinculado" color="primary" variant="outlined" />
         </Stack>
 
         <Button
@@ -34,7 +34,7 @@ export function PatientCard({ patient }: { patient: NutritionistPatient }) {
           endIcon={<ChevronRightRoundedIcon />}
           sx={{ alignSelf: "flex-start" }}
         >
-          Open patient
+          Ver paciente
         </Button>
       </Stack>
     </AppCard>

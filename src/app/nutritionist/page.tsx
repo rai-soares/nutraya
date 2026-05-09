@@ -8,7 +8,7 @@ import { NutritionistPatientsScreen } from "@/modules/nutritionist/components/nu
 export default function NutritionistPage() {
   return (
     <ProtectedRoute allowedRoles={["NUTRI"]}>
-      <AppLayout role="NUTRI" title="Patients">
+      <AppLayout role="NUTRI" title="Pacientes">
         <PageContainer>
           <NutritionistPatientsScreen />
         </PageContainer>

@@ -30,7 +30,7 @@ describe("PatientCard", () => {
 
     expect(screen.getByText("Ana Costa")).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open patient/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /ver paciente/i })).toHaveAttribute(
       "href",
       "/nutritionist/patients/patient-1",
     );

@@ -85,11 +85,11 @@ export function ChatMessageForm({
 
   function validateSelectedFile(file: File) {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      throw new Error("Unsupported image type. Use JPG, JPEG, PNG, or WEBP.");
+      throw new Error("Formato de imagem não suportado. Use JPG, JPEG, PNG ou WEBP.");
     }
 
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      throw new Error("Image file is too large. Maximum size is 5MB.");
+      throw new Error("A imagem é muito grande. O tamanho máximo é 5 MB.");
     }
   }
 
@@ -144,7 +144,7 @@ export function ChatMessageForm({
           } catch (error) {
             clearSelectedImage();
             setLocalError(
-              error instanceof Error ? error.message : "Unable to use this image.",
+              error instanceof Error ? error.message : "Não foi possível usar esta imagem.",
             );
           }
         }}
@@ -152,7 +152,7 @@ export function ChatMessageForm({
 
       {selectedFile && previewUrl ? (
         <Stack spacing={1.5}>
-          <Typography variant="subtitle2">Selected image preview</Typography>
+          <Typography variant="subtitle2">Pré-visualização da imagem</Typography>
           <Box
             sx={{
               position: "relative",
@@ -163,7 +163,7 @@ export function ChatMessageForm({
             <Box
               component="img"
               src={previewUrl}
-              alt="Selected chat upload preview"
+              alt="Pré-visualização da imagem do chat"
               onClick={() => setPreviewOpen(true)}
               sx={{
                 width: "100%",
@@ -176,7 +176,7 @@ export function ChatMessageForm({
               }}
             />
             <IconButton
-              aria-label="Remove selected image"
+              aria-label="Remover imagem selecionada"
               onClick={clearSelectedImage}
               size="small"
               sx={{
@@ -197,9 +197,9 @@ export function ChatMessageForm({
       ) : null}
 
       <TextField
-        label={selectedFile ? "Add a caption (optional)" : "Write a message"}
+        label={selectedFile ? "Adicionar legenda (opcional)" : "Digite uma mensagem"}
         placeholder={
-          selectedFile ? "Add a caption for this image" : "Type your message here"
+          selectedFile ? "Adicione uma legenda para esta imagem" : "Digite sua mensagem aqui"
         }
         multiline
         minRows={3}
@@ -209,11 +209,11 @@ export function ChatMessageForm({
         {...register("text", {
           validate: (value) => {
             if (!selectedFile && value.trim().length === 0) {
-              return "Message text is required.";
+              return "Digite uma mensagem para enviar.";
             }
 
             if (value.trim().length > 2000) {
-              return "Message text is too long.";
+              return "A mensagem é muito longa.";
             }
 
             return true;
@@ -236,7 +236,7 @@ export function ChatMessageForm({
           }
           sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
         >
-          {selectedFile ? "Change image" : "Select image"}
+          {selectedFile ? "Trocar imagem" : "Selecionar imagem"}
         </Button>
 
         <Button
@@ -249,11 +249,11 @@ export function ChatMessageForm({
         >
           {isSubmitting
             ? selectedFile
-              ? "Uploading image..."
-              : "Sending..."
+              ? "Enviando imagem..."
+              : "Enviando..."
             : selectedFile
-              ? "Send image"
-              : "Send message"}
+              ? "Enviar imagem"
+              : "Enviar"}
         </Button>
       </Stack>
 
@@ -268,7 +268,7 @@ export function ChatMessageForm({
             <Box
               component="img"
               src={previewUrl}
-              alt="Selected chat upload preview enlarged"
+              alt="Imagem ampliada do chat"
               sx={{
                 width: "100%",
                 maxHeight: "80vh",

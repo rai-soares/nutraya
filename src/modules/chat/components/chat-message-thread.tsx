@@ -16,7 +16,7 @@ import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import type { ChatMessage, ConversationParticipant } from "@/modules/shared/types/api";
 
 function formatMessageTime(value: string): string {
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("pt-BR", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -41,8 +41,8 @@ export function ChatMessageThread({
     return (
       <AppCard>
         <EmptyState
-          title="No messages yet"
-          description="Start the conversation with a simple check-in message."
+          title="Nenhuma mensagem ainda."
+          description="Envie uma mensagem para iniciar a conversa."
         />
       </AppCard>
     );
@@ -98,7 +98,7 @@ export function ChatMessageThread({
                       color: isOwnMessage ? "inherit" : "text.primary",
                     }}
                   >
-                    {isOwnMessage ? "You" : participant.name}
+                    {isOwnMessage ? "Você" : participant.name}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -116,7 +116,7 @@ export function ChatMessageThread({
                   <Box
                     component="img"
                     src={message.imageUrl}
-                    alt="Chat image"
+                    alt="Imagem do chat"
                     onClick={() => setPreviewImage(message.imageUrl)}
                     sx={{
                       width: "100%",
@@ -142,7 +142,7 @@ export function ChatMessageThread({
 
                 {isOwnMessage ? (
                   <Chip
-                    label={message.readAt ? "Read" : "Sent"}
+                    label={message.readAt ? "Lida" : "Enviada"}
                     size="small"
                     sx={{
                       alignSelf: "flex-end",
@@ -176,7 +176,7 @@ export function ChatMessageThread({
             <Box
               component="img"
               src={previewImage}
-              alt="Expanded chat image"
+              alt="Imagem ampliada do chat"
               sx={{
                 width: "100%",
                 maxHeight: "80vh",

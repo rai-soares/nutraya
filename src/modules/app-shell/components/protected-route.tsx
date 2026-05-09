@@ -35,11 +35,11 @@ export function ProtectedRoute({
   }, [allowedRoles, pathname, router, session, status]);
 
   if (status === "loading") {
-    return <LoadingState message="Checking your session..." />;
+    return <LoadingState message="Verificando sua sessão..." />;
   }
 
   if (!session || !allowedRoles.includes(session.user.role)) {
-    return <LoadingState message="Redirecting..." />;
+    return <LoadingState message="Redirecionando..." />;
   }
 
   return <>{children}</>;

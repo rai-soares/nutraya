@@ -17,19 +17,19 @@ describe("MacroGoalForm", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.change(screen.getByLabelText("Calories (kcal)"), {
+    fireEvent.change(screen.getByLabelText("Calorias (kcal)"), {
       target: { value: "2000" },
     });
-    fireEvent.change(screen.getByLabelText("Protein (g)"), {
+    fireEvent.change(screen.getByLabelText("Proteína (g)"), {
       target: { value: "120" },
     });
-    fireEvent.change(screen.getByLabelText("Carbs (g)"), {
+    fireEvent.change(screen.getByLabelText("Carboidratos (g)"), {
       target: { value: "220" },
     });
-    fireEvent.change(screen.getByLabelText("Fat (g)"), {
+    fireEvent.change(screen.getByLabelText("Gorduras (g)"), {
       target: { value: "60" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /create macro goals/i }));
+    fireEvent.click(screen.getByRole("button", { name: /criar metas de macros/i }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({

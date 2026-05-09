@@ -58,10 +58,10 @@ export function MacroGoalForm({
 
       <Grid container spacing={2}>
         {[
-          { field: "calories", label: "Calories", unit: "kcal" },
-          { field: "protein", label: "Protein", unit: "g" },
-          { field: "carbs", label: "Carbs", unit: "g" },
-          { field: "fat", label: "Fat", unit: "g" },
+          { field: "calories", label: "Calorias", unit: "kcal" },
+          { field: "protein", label: "Proteína", unit: "g" },
+          { field: "carbs", label: "Carboidratos", unit: "g" },
+          { field: "fat", label: "Gorduras", unit: "g" },
         ].map((item) => (
           <Grid key={item.field} size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -71,10 +71,10 @@ export function MacroGoalForm({
               error={Boolean(errors[item.field as keyof MacroGoalFormValues])}
               helperText={errors[item.field as keyof MacroGoalFormValues]?.message}
               {...register(item.field as keyof MacroGoalFormValues, {
-                required: `${item.label} is required.`,
+                required: "Campo obrigatório",
                 min: {
                   value: 0,
-                  message: `${item.label} must be non-negative.`,
+                  message: "Deve ser maior ou igual a 0",
                 },
                 valueAsNumber: true,
               })}
@@ -84,7 +84,7 @@ export function MacroGoalForm({
       </Grid>
 
       <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ alignSelf: "flex-start" }}>
-        {isSubmitting ? "Saving..." : goal ? "Update macro goals" : "Create macro goals"}
+        {isSubmitting ? "Salvando..." : goal ? "Salvar metas de macros" : "Criar metas de macros"}
       </Button>
     </Stack>
   );

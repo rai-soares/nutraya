@@ -8,7 +8,7 @@ import { PatientHomeScreen } from "@/modules/patient/components/patient-home-scr
 export default function PatientPage() {
   return (
     <ProtectedRoute allowedRoles={["PATIENT"]}>
-      <AppLayout role="PATIENT" title="Patient home">
+      <AppLayout role="PATIENT" title="Início do paciente">
         <PageContainer>
           <PatientHomeScreen />
         </PageContainer>

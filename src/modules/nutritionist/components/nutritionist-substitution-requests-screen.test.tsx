@@ -140,10 +140,10 @@ describe("NutritionistSubstitutionRequestsScreen", () => {
     );
 
     expect(
-      screen.getAllByRole("button", { name: /edit feedback|add feedback/i }),
+      screen.getAllByRole("button", { name: /editar feedback|adicionar feedback/i }),
     ).toHaveLength(3);
     expect(
-      screen.getByText(/applied to progress on saturday, may 9/i),
+      screen.getByText(/aplicada ao progresso em sábado, 9 de maio/i),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /approve/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /reject/i })).not.toBeInTheDocument();

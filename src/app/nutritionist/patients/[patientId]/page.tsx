@@ -16,7 +16,7 @@ export default async function NutritionistPatientDetailPage({
 
   return (
     <ProtectedRoute allowedRoles={["NUTRI"]}>
-      <AppLayout role="NUTRI" title="Patient setup">
+      <AppLayout role="NUTRI" title="Detalhes do paciente">
         <PageContainer>
           <NutritionistPatientDetailScreen patientId={patientId} />
         </PageContainer>

@@ -17,10 +17,10 @@ describe("ChatMessageForm", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.change(screen.getByLabelText(/write a message/i), {
+    fireEvent.change(screen.getByLabelText(/digite uma mensagem/i), {
       target: { value: "  Hello coach  " },
     });
-    fireEvent.click(screen.getByRole("button", { name: /send message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^enviar$/i }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({

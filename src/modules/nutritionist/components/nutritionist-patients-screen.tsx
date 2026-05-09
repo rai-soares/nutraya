@@ -17,6 +17,7 @@ import {
   listNutritionistPatients,
   type CreateNutritionistPatientPayload,
 } from "@/modules/nutritionist/nutritionist.api";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 export function NutritionistPatientsScreen() {
   const queryClient = useQueryClient();
@@ -42,13 +43,14 @@ export function NutritionistPatientsScreen() {
   });
 
   if (patientsQuery.isLoading) {
-    return <LoadingState message="Loading linked patients..." />;
+    return <LoadingState message="Carregando pacientes..." />;
   }
 
   if (patientsQuery.isError) {
     return (
       <ErrorState
-        message={patientsQuery.error instanceof Error ? patientsQuery.error.message : "Unable to load patients."}
+        title="Não foi possível carregar os pacientes"
+        message={getErrorMessage(patientsQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void patientsQuery.refetch()}
       />
     );
@@ -58,28 +60,28 @@ export function NutritionistPatientsScreen() {
     <>
       <Stack spacing={3}>
         <PageHeader
-          title="Patients"
-          subtitle="Create or link patients here so you can configure their plan before testing the patient flow."
+          title="Pacientes"
+          subtitle="Crie e acompanhe seus pacientes para configurar metas, plano alimentar e acompanhamento diário."
           action={
             <Button
               variant="contained"
               startIcon={<AddRoundedIcon />}
               onClick={() => setIsDialogOpen(true)}
             >
-              Add patient
+              Criar paciente
             </Button>
           }
         />
 
         {createPatientMutation.isSuccess ? (
-          <Alert severity="success">Patient saved and linked successfully.</Alert>
+          <Alert severity="success">Paciente criado com sucesso.</Alert>
         ) : null}
 
         {!patientsQuery.data || patientsQuery.data.length === 0 ? (
           <EmptyState
-            title="No patients linked yet"
-            description="Create the first patient to start configuring macro goals and meal plans."
-            actionLabel="Create patient"
+            title="Nenhum paciente cadastrado ainda."
+            description="Crie seu primeiro paciente para começar."
+            actionLabel="Criar paciente"
             onAction={() => setIsDialogOpen(true)}
           />
         ) : (
@@ -95,8 +97,8 @@ export function NutritionistPatientsScreen() {
         isOpen={isDialogOpen}
         isSubmitting={createPatientMutation.isPending}
         errorMessage={
-          createPatientMutation.isError && createPatientMutation.error instanceof Error
-            ? createPatientMutation.error.message
+          createPatientMutation.isError
+            ? getErrorMessage(createPatientMutation.error, "Não foi possível salvar o paciente.")
             : null
         }
         onClose={() => setIsDialogOpen(false)}

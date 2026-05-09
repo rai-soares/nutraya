@@ -32,15 +32,16 @@ import {
   type ChatMessageFormSubmitValues,
 } from "@/modules/chat/components/chat-message-form";
 import { ChatMessageThread } from "@/modules/chat/components/chat-message-thread";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 const CHAT_POLLING_INTERVAL_MS = 3000;
 
 function formatConversationTime(value: string | null): string {
   if (!value) {
-    return "No messages yet";
+    return "Sem mensagens";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("pt-BR", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -123,7 +124,7 @@ export function NutritionistChatScreen() {
           },
     ) => {
       if (!effectiveSelectedPatientId) {
-        throw new Error("Select a patient conversation first.");
+        throw new Error("Selecione uma conversa de paciente primeiro.");
       }
 
       return sendNutritionistMessage(
@@ -157,7 +158,7 @@ export function NutritionistChatScreen() {
   const markReadMutation = useMutation({
     mutationFn: async () => {
       if (!effectiveSelectedPatientId) {
-        throw new Error("Select a patient conversation first.");
+        throw new Error("Selecione uma conversa de paciente primeiro.");
       }
 
       return markNutritionistMessagesAsRead(
@@ -208,18 +209,14 @@ export function NutritionistChatScreen() {
   ]);
 
   if (conversationsQuery.isLoading) {
-    return <LoadingState message="Loading conversations..." />;
+    return <LoadingState message="Carregando conversas..." />;
   }
 
   if (conversationsQuery.isError) {
     return (
       <ErrorState
-        title="Chat unavailable"
-        message={
-          conversationsQuery.error instanceof Error
-            ? conversationsQuery.error.message
-            : "Unable to load conversations."
-        }
+        title="Chat indisponível"
+        message={getErrorMessage(conversationsQuery.error, "Não foi possível carregar as conversas.")}
         onRetry={() => void conversationsQuery.refetch()}
       />
     );
@@ -228,8 +225,8 @@ export function NutritionistChatScreen() {
   if (!conversationsQuery.data || conversationsQuery.data.length === 0) {
     return (
       <EmptyState
-        title="No patient conversations yet"
-        description="Link a patient first. The chat conversation is created automatically for linked relationships."
+        title="Nenhuma mensagem ainda."
+        description="As conversas com pacientes vinculados aparecerão aqui automaticamente."
       />
     );
   }
@@ -238,14 +235,12 @@ export function NutritionistChatScreen() {
     <Stack spacing={3}>
       <PageHeader
         title="Chat"
-        subtitle="Follow up with linked patients through a simple 1:1 message thread."
+        subtitle="Acompanhe pacientes vinculados em conversas diretas e simples."
       />
 
       {markReadMutation.isError ? (
         <Alert severity="error">
-          {markReadMutation.error instanceof Error
-            ? markReadMutation.error.message
-            : "Unable to update read status."}
+          {getErrorMessage(markReadMutation.error, "Não foi possível atualizar a leitura das mensagens.")}
         </Alert>
       ) : null}
 
@@ -310,7 +305,7 @@ export function NutritionistChatScreen() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {conversation.lastMessageText ?? "No messages yet"}
+                        {conversation.lastMessageText ?? "Nenhuma mensagem ainda"}
                       </Typography>
 
                       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -330,29 +325,21 @@ export function NutritionistChatScreen() {
         <Grid size={{ xs: 12, md: 8 }}>
           {!effectiveSelectedPatientId ? (
             <EmptyState
-              title="Select a conversation"
-              description="Choose a patient to load messages."
+              title="Selecione uma conversa"
+              description="Escolha um paciente para carregar as mensagens."
             />
           ) : conversationQuery.isLoading || messagesQuery.isLoading ? (
-            <LoadingState message="Loading conversation..." />
+            <LoadingState message="Carregando conversa..." />
           ) : conversationQuery.isError ? (
             <ErrorState
-              title="Conversation unavailable"
-              message={
-                conversationQuery.error instanceof Error
-                  ? conversationQuery.error.message
-                  : "Unable to load the conversation."
-              }
+              title="Conversa indisponível"
+              message={getErrorMessage(conversationQuery.error, "Não foi possível carregar a conversa.")}
               onRetry={() => void conversationQuery.refetch()}
             />
           ) : messagesQuery.isError ? (
             <ErrorState
-              title="Messages unavailable"
-              message={
-                messagesQuery.error instanceof Error
-                  ? messagesQuery.error.message
-                  : "Unable to load messages."
-              }
+              title="Mensagens indisponíveis"
+              message={getErrorMessage(messagesQuery.error, "Não foi possível carregar as mensagens.")}
               onRetry={() => void messagesQuery.refetch()}
             />
           ) : conversationQuery.data && messagesQuery.data && session?.user.id ? (
@@ -367,10 +354,10 @@ export function NutritionistChatScreen() {
                   </Typography>
                   <Typography color="text.secondary">
                     {selectedConversationSummary?.unreadCount
-                      ? `${selectedConversationSummary.unreadCount} unread message${
-                          selectedConversationSummary.unreadCount === 1 ? "" : "s"
-                        }`
-                      : "All messages read"}
+                      ? `${selectedConversationSummary.unreadCount} mensagem${
+                          selectedConversationSummary.unreadCount === 1 ? "" : "ns"
+                        } não lida${selectedConversationSummary.unreadCount === 1 ? "" : "s"}`
+                      : "Todas as mensagens foram lidas"}
                   </Typography>
                 </Stack>
               </AppCard>
@@ -389,12 +376,10 @@ export function NutritionistChatScreen() {
                   }
                   errorMessage={
                     (uploadImageMutation.isError &&
-                      uploadImageMutation.error instanceof Error &&
-                      uploadImageMutation.error.message) ||
+                      getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
                     (sendMessageMutation.isError &&
-                      sendMessageMutation.error instanceof Error
-                      ? sendMessageMutation.error.message
-                      : null)
+                      getErrorMessage(sendMessageMutation.error, "Não foi possível enviar a mensagem.")) ||
+                    null
                   }
                   onSubmit={async (values: ChatMessageFormSubmitValues) => {
                     if (values.messageType === "TEXT") {

@@ -22,6 +22,7 @@ import { PageHeader } from "@/modules/app-shell/components/page-header";
 import { apiClient } from "@/modules/shared/api/api-client";
 import { useAuth } from "@/modules/auth/auth-context";
 import { MacroProgressCard } from "@/modules/macros/components/macro-progress-card";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 import type {
   AppUser,
   DailyMacroProgress,
@@ -76,13 +77,14 @@ export function NutritionistDashboardScreen() {
   }, [linkageQueries, patientCandidates]);
 
   if (usersQuery.isLoading) {
-    return <LoadingState message="Loading patients..." />;
+    return <LoadingState message="Carregando painel..." />;
   }
 
   if (usersQuery.isError) {
     return (
       <ErrorState
-        message={usersQuery.error instanceof Error ? usersQuery.error.message : "Unable to load dashboard."}
+        title="Não foi possível carregar o painel"
+        message={getErrorMessage(usersQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void usersQuery.refetch()}
       />
     );
@@ -91,14 +93,14 @@ export function NutritionistDashboardScreen() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Nutritionist dashboard"
-        subtitle="A lightweight view of linked patients, progress, and active meal plan context."
+        title="Painel do nutricionista"
+        subtitle="Acompanhe pacientes vinculados, progresso diário e contexto do plano alimentar ativo."
       />
 
       {linkedPatients.length === 0 ? (
         <EmptyState
-          title="No linked patients available"
-          description="This dashboard only shows patients that the current nutritionist can access through existing backend endpoints."
+          title="Nenhum paciente vinculado disponível"
+          description="Os pacientes vinculados aparecerão aqui para acompanhamento."
         />
       ) : (
         <Stack spacing={2}>
@@ -176,24 +178,18 @@ function PatientAccordion({
             </div>
           </Stack>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-            <Chip label={activePlan ? `Active plan: ${activePlan.title}` : "No active plan"} />
-            <Chip label={`${mealPlans.length} plan${mealPlans.length === 1 ? "" : "s"}`} variant="outlined" />
+            <Chip label={activePlan ? `Plano ativo: ${activePlan.title}` : "Sem plano ativo"} />
+            <Chip label={`${mealPlans.length} plano${mealPlans.length === 1 ? "" : "s"}`} variant="outlined" />
           </Stack>
         </Stack>
       </AccordionSummary>
       <AccordionDetails>
         {progressQuery.isLoading || summaryQuery.isLoading ? (
-          <LoadingState message="Loading patient details..." />
+          <LoadingState message="Carregando detalhes do paciente..." />
         ) : progressQuery.isError || summaryQuery.isError ? (
           <ErrorState
-            title="Patient summary unavailable"
-            message={
-              progressQuery.error instanceof Error
-                ? progressQuery.error.message
-                : summaryQuery.error instanceof Error
-                  ? summaryQuery.error.message
-                  : "Unable to load patient details."
-            }
+            title="Resumo do paciente indisponível"
+            message={getErrorMessage(progressQuery.error ?? summaryQuery.error, "Não foi possível carregar os dados do paciente.")}
           />
         ) : progressQuery.data && summaryQuery.data ? (
           <Stack spacing={2.5}>
@@ -204,14 +200,14 @@ function PatientAccordion({
                 sx={{ justifyContent: "space-between" }}
               >
                 <div>
-                  <Typography variant="h3">Macro progress</Typography>
+                  <Typography variant="h3">Progresso diário</Typography>
                   <Typography color="text.secondary" sx={{ mt: 1 }}>
                     {progressQuery.data.mealPlan.title}
                   </Typography>
                 </div>
                 <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-                  <Chip label={`${summaryQuery.data.completedMeals}/${summaryQuery.data.totalMeals} meals done`} color="primary" />
-                  <Chip label={`${summaryQuery.data.pendingMeals} pending`} variant="outlined" />
+                  <Chip label={`${summaryQuery.data.completedMeals}/${summaryQuery.data.totalMeals} refeições concluídas`} color="primary" />
+                  <Chip label={`${summaryQuery.data.pendingMeals} pendentes`} variant="outlined" />
                 </Stack>
               </Stack>
             </AppCard>
@@ -219,7 +215,7 @@ function PatientAccordion({
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                 <MacroProgressCard
-                  label="Calories"
+                  label="Calorias"
                   unit="kcal"
                   consumed={progressQuery.data.consumed.calories}
                   goal={progressQuery.data.goals.calories}
@@ -229,7 +225,7 @@ function PatientAccordion({
               </Grid>
               <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                 <MacroProgressCard
-                  label="Protein"
+                  label="Proteína"
                   unit="g"
                   consumed={progressQuery.data.consumed.protein}
                   goal={progressQuery.data.goals.protein}
@@ -239,7 +235,7 @@ function PatientAccordion({
               </Grid>
               <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                 <MacroProgressCard
-                  label="Carbs"
+                  label="Carboidratos"
                   unit="g"
                   consumed={progressQuery.data.consumed.carbs}
                   goal={progressQuery.data.goals.carbs}
@@ -249,7 +245,7 @@ function PatientAccordion({
               </Grid>
               <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
                 <MacroProgressCard
-                  label="Fat"
+                  label="Gorduras"
                   unit="g"
                   consumed={progressQuery.data.consumed.fat}
                   goal={progressQuery.data.goals.fat}
@@ -261,8 +257,8 @@ function PatientAccordion({
           </Stack>
         ) : (
           <EmptyState
-            title="No patient data yet"
-            description="This patient does not have enough configured data to show a progress summary."
+            title="Nenhum dado disponível ainda"
+            description="Este paciente ainda não possui dados suficientes para exibir o progresso."
           />
         )}
       </AccordionDetails>

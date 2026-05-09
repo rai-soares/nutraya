@@ -32,8 +32,8 @@ describe("MealList", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Excluir" }));
 
     expect(onEdit).toHaveBeenCalledWith(meal);
     expect(onDelete).toHaveBeenCalledWith(meal);

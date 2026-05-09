@@ -62,7 +62,7 @@ export function CreatePatientDialog({
 
   return (
     <Dialog open={isOpen} onClose={isSubmitting ? undefined : onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create or link patient</DialogTitle>
+      <DialogTitle>Criar paciente</DialogTitle>
       <Stack
         component="form"
         onSubmit={handleSubmit(async (values) => {
@@ -74,37 +74,37 @@ export function CreatePatientDialog({
             {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
             <TextField
-              label="Patient name"
+              label="Nome do paciente"
               error={Boolean(errors.name)}
               helperText={errors.name?.message}
               {...register("name", {
-                required: "Name is required.",
+                required: "Campo obrigatório",
               })}
             />
 
             <TextField
-              label="Email"
+              label="E-mail"
               type="email"
               error={Boolean(errors.email)}
               helperText={errors.email?.message}
               {...register("email", {
-                required: "Email is required.",
+                required: "Campo obrigatório",
                 pattern: {
                   value: /\S+@\S+\.\S+/,
-                  message: "Enter a valid email.",
+                  message: "E-mail inválido",
                 },
               })}
             />
 
             <TextField
-              label="Temporary password"
+              label="Senha temporária"
               error={Boolean(errors.password)}
-              helperText={errors.password?.message ?? "Share this with the patient for first access."}
+              helperText={errors.password?.message ?? "Compartilhe esta senha com o paciente para o primeiro acesso."}
               {...register("password", {
-                required: "Temporary password is required.",
+                required: "Campo obrigatório",
                 minLength: {
                   value: 6,
-                  message: "Password must be at least 6 characters.",
+                  message: "A senha deve ter pelo menos 6 caracteres",
                 },
               })}
             />
@@ -119,16 +119,16 @@ export function CreatePatientDialog({
               }}
               sx={{ alignSelf: "flex-start" }}
             >
-              Generate password
+              Gerar senha
             </Button>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button onClick={onClose} disabled={isSubmitting}>
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit" variant="contained" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save patient"}
+            {isSubmitting ? "Salvando..." : "Salvar paciente"}
           </Button>
         </DialogActions>
       </Stack>

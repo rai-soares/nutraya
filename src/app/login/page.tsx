@@ -5,7 +5,7 @@ import { LoginScreen } from "@/modules/auth/components/login-screen";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoadingState message="Loading sign-in..." />}>
+    <Suspense fallback={<LoadingState message="Carregando acesso..." />}>
       <LoginScreen />
     </Suspense>
   );

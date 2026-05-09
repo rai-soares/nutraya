@@ -24,7 +24,7 @@ describe("MacroProgressCard", () => {
 
     expect(screen.getByText("Protein")).toBeInTheDocument();
     expect(screen.getByText(/90/)).toBeInTheDocument();
-    expect(screen.getByText("30 g remaining")).toBeInTheDocument();
-    expect(screen.getByText("75% complete")).toBeInTheDocument();
+    expect(screen.getByText("30 g restantes")).toBeInTheDocument();
+    expect(screen.getByText("75% concluído")).toBeInTheDocument();
   });
 });

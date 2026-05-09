@@ -60,7 +60,7 @@ describe("MealSubstitutionEstimationPanel", () => {
     );
 
     expect(
-      screen.getByText(/daily progress is not updated automatically/i),
+      screen.getByText(/o progresso diário não é atualizado automaticamente/i),
     ).toBeInTheDocument();
   });
 
@@ -86,10 +86,10 @@ describe("MealSubstitutionEstimationPanel", () => {
 
     expect(screen.getByText("620 kcal")).toBeInTheDocument();
     expect(screen.getByText(/rice, grilled chicken, salad/i)).toBeInTheDocument();
-    expect(screen.getByText(/confidence medium/i)).toBeInTheDocument();
-    expect(screen.getByText(/hidden ingredients may affect accuracy/i)).toBeInTheDocument();
+    expect(screen.getByText(/confiança média/i)).toBeInTheDocument();
+    expect(screen.getByText(/os valores podem variar conforme a porção real/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/not applied to patient progress yet/i),
+      screen.getByText(/ainda não aplicado ao progresso do paciente/i),
     ).toBeInTheDocument();
   });
 
@@ -116,7 +116,7 @@ describe("MealSubstitutionEstimationPanel", () => {
     );
 
     expect(
-      screen.getByText(/applied to patient progress on saturday, may 9/i),
+      screen.getByText(/aplicado ao progresso do paciente em sábado, 9 de maio/i),
     ).toBeInTheDocument();
   });
 });

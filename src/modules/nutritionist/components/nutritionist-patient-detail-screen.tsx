@@ -40,6 +40,7 @@ import {
   updatePatientMacroGoal,
 } from "@/modules/nutritionist/nutritionist.api";
 import type { Meal } from "@/modules/shared/types/api";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 export function NutritionistPatientDetailScreen({
   patientId,
@@ -148,7 +149,7 @@ export function NutritionistPatientDetailScreen({
       fat: number;
     }) => {
       if (!activeMealPlan?.id) {
-        throw new Error("Create and activate a meal plan before adding meals.");
+        throw new Error("Crie e ative um plano alimentar antes de adicionar refeições.");
       }
 
       const payload = {
@@ -181,7 +182,7 @@ export function NutritionistPatientDetailScreen({
   const deleteMealMutation = useMutation({
     mutationFn: async (meal: Meal) => {
       if (!activeMealPlan?.id) {
-        throw new Error("Active meal plan not found.");
+        throw new Error("Plano alimentar ativo não encontrado.");
       }
 
       return deleteMealFromMealPlan(activeMealPlan.id, meal.id, authOptions);
@@ -192,13 +193,14 @@ export function NutritionistPatientDetailScreen({
   });
 
   if (patientQuery.isLoading || mealPlansQuery.isLoading) {
-    return <LoadingState message="Loading patient setup..." />;
+    return <LoadingState message="Carregando dados do paciente..." />;
   }
 
   if (patientQuery.isError) {
     return (
       <ErrorState
-        message={patientQuery.error instanceof Error ? patientQuery.error.message : "Unable to load patient."}
+        title="Não foi possível carregar o paciente"
+        message={getErrorMessage(patientQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void patientQuery.refetch()}
       />
     );
@@ -207,7 +209,8 @@ export function NutritionistPatientDetailScreen({
   if (mealPlansQuery.isError) {
     return (
       <ErrorState
-        message={mealPlansQuery.error instanceof Error ? mealPlansQuery.error.message : "Unable to load meal plans."}
+        title="Não foi possível carregar os planos alimentares"
+        message={getErrorMessage(mealPlansQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void mealPlansQuery.refetch()}
       />
     );
@@ -226,33 +229,33 @@ export function NutritionistPatientDetailScreen({
     <>
       <Stack spacing={3}>
         <PageHeader
-          title={patientQuery.data?.patient.name ?? "Patient"}
+          title={patientQuery.data?.patient.name ?? "Paciente"}
           subtitle={patientQuery.data?.patient.email ?? ""}
         />
 
         <AppCard>
           <Stack spacing={1.5}>
-            <Typography variant="h3">Patient basic info</Typography>
-            <Typography>Name: {patientQuery.data?.patient.name}</Typography>
-            <Typography color="text.secondary">Email: {patientQuery.data?.patient.email}</Typography>
+            <Typography variant="h3">Informações do paciente</Typography>
+            <Typography>Nome: {patientQuery.data?.patient.name}</Typography>
+            <Typography color="text.secondary">E-mail: {patientQuery.data?.patient.email}</Typography>
           </Stack>
         </AppCard>
 
         <AppCard>
           <Stack spacing={2}>
-            <Typography variant="h3">Macro goals</Typography>
+            <Typography variant="h3">Metas de macros</Typography>
             {macroGoalMutation.isSuccess ? (
-              <Alert severity="success">Macro goals saved successfully.</Alert>
+              <Alert severity="success">Metas atualizadas com sucesso.</Alert>
             ) : null}
             {macroGoalError instanceof Error ? (
-              <Alert severity="error">{macroGoalError.message}</Alert>
+              <Alert severity="error">{getErrorMessage(macroGoalError, "Não foi possível carregar as metas de macros.")}</Alert>
             ) : null}
             <MacroGoalForm
               goal={macroGoalQuery.data ?? null}
               isSubmitting={macroGoalMutation.isPending}
               errorMessage={
-                macroGoalMutation.isError && macroGoalMutation.error instanceof Error
-                  ? macroGoalMutation.error.message
+                macroGoalMutation.isError
+                  ? getErrorMessage(macroGoalMutation.error, "Não foi possível salvar as alterações.")
                   : null
               }
               onSubmit={async (values) => {
@@ -264,15 +267,15 @@ export function NutritionistPatientDetailScreen({
 
         <AppCard>
           <Stack spacing={2.5}>
-            <Typography variant="h3">Meal plans</Typography>
+            <Typography variant="h3">Planos alimentares</Typography>
             {mealPlanMutation.isSuccess ? (
-              <Alert severity="success">Meal plan created successfully.</Alert>
+              <Alert severity="success">Plano alimentar salvo com sucesso.</Alert>
             ) : null}
             <MealPlanForm
               isSubmitting={mealPlanMutation.isPending}
               errorMessage={
-                mealPlanMutation.isError && mealPlanMutation.error instanceof Error
-                  ? mealPlanMutation.error.message
+                mealPlanMutation.isError
+                  ? getErrorMessage(mealPlanMutation.error, "Não foi possível salvar o plano alimentar.")
                   : null
               }
               onSubmit={async (values) => {
@@ -282,8 +285,8 @@ export function NutritionistPatientDetailScreen({
 
             {!mealPlansQuery.data || mealPlansQuery.data.length === 0 ? (
               <EmptyState
-                title="No meal plans yet"
-                description="Create the first meal plan, then activate it and add meals."
+                title="Nenhum plano alimentar cadastrado"
+                description="Crie o primeiro plano alimentar, depois ative-o e adicione as refeições."
               />
             ) : (
               <Stack spacing={2}>
@@ -307,7 +310,7 @@ export function NutritionistPatientDetailScreen({
                           <Chip
                             color="success"
                             icon={<CheckCircleRoundedIcon />}
-                            label="Active plan"
+                            label="Plano ativo"
                           />
                         ) : (
                           <Button
@@ -317,7 +320,7 @@ export function NutritionistPatientDetailScreen({
                               activateMealPlanMutation.mutate(plan.id);
                             }}
                           >
-                            Activate
+                            {activateMealPlanMutation.isPending ? "Ativando..." : "Ativar"}
                           </Button>
                         )}
                       </Stack>
@@ -332,8 +335,8 @@ export function NutritionistPatientDetailScreen({
         <AppCard>
           <Stack spacing={2.5}>
             <PageHeader
-              title="Active meal plan"
-              subtitle={activeMealPlan ? activeMealPlan.title : "No active meal plan selected yet."}
+              title="Plano alimentar ativo"
+              subtitle={activeMealPlan ? activeMealPlan.title : "Nenhum plano alimentar ativo selecionado."}
             />
 
             {activeMealPlan ? (
@@ -342,23 +345,20 @@ export function NutritionistPatientDetailScreen({
                   <Typography color="text.secondary">{activeMealPlan.description}</Typography>
                 ) : null}
                 {activeMealPlanQuery.isLoading ? (
-                  <LoadingState message="Loading active meal plan..." />
+                  <LoadingState message="Carregando plano alimentar..." />
                 ) : activeMealPlanQuery.isError ? (
                   <ErrorState
-                    message={
-                      activeMealPlanQuery.error instanceof Error
-                        ? activeMealPlanQuery.error.message
-                        : "Unable to load active meal plan."
-                    }
+                    title="Não foi possível carregar o plano alimentar"
+                    message={getErrorMessage(activeMealPlanQuery.error, "Não foi possível carregar os dados.")}
                     onRetry={() => void activeMealPlanQuery.refetch()}
                   />
                 ) : (
                   <Stack spacing={2}>
                     {mealMutation.isSuccess ? (
-                      <Alert severity="success">Meal saved successfully.</Alert>
+                      <Alert severity="success">Refeição salva com sucesso.</Alert>
                     ) : null}
                     {deleteMealMutation.isSuccess ? (
-                      <Alert severity="success">Meal deleted successfully.</Alert>
+                      <Alert severity="success">Refeição removida com sucesso.</Alert>
                     ) : null}
 
                     <Button
@@ -370,7 +370,7 @@ export function NutritionistPatientDetailScreen({
                         setIsMealDialogOpen(true);
                       }}
                     >
-                      Add meal
+                      Adicionar refeição
                     </Button>
 
                     <MealList
@@ -389,8 +389,8 @@ export function NutritionistPatientDetailScreen({
               </>
             ) : (
               <EmptyState
-                title="No active meal plan"
-                description="Activate a meal plan to start creating the meals that will appear to the patient."
+                title="Nenhum plano alimentar ativo"
+                description="Ative um plano alimentar para começar a criar as refeições que aparecerão para o paciente."
               />
             )}
           </Stack>
@@ -403,14 +403,14 @@ export function NutritionistPatientDetailScreen({
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle>{editingMeal ? "Edit meal" : "Create meal"}</DialogTitle>
+        <DialogTitle>{editingMeal ? "Editar refeição" : "Criar refeição"}</DialogTitle>
         <DialogContent>
           <MealForm
             meal={editingMeal}
             isSubmitting={mealMutation.isPending}
             errorMessage={
-              mealMutation.isError && mealMutation.error instanceof Error
-                ? mealMutation.error.message
+              mealMutation.isError
+                ? getErrorMessage(mealMutation.error, "Não foi possível salvar a refeição.")
                 : null
             }
             onCancel={() => setIsMealDialogOpen(false)}

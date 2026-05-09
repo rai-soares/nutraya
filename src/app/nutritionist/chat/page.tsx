@@ -8,7 +8,7 @@ import { NutritionistChatScreen } from "@/modules/chat/components/nutritionist-c
 export default function NutritionistChatPage() {
   return (
     <ProtectedRoute allowedRoles={["NUTRI"]}>
-      <AppLayout role="NUTRI" title="Chat">
+      <AppLayout role="NUTRI" title="Mensagens">
         <PageContainer>
           <NutritionistChatScreen />
         </PageContainer>

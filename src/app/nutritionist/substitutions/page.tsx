@@ -8,7 +8,7 @@ import { NutritionistSubstitutionRequestsScreen } from "@/modules/nutritionist/c
 export default function NutritionistSubstitutionsPage() {
   return (
     <ProtectedRoute allowedRoles={["NUTRI"]}>
-      <AppLayout role="NUTRI" title="Substitution requests">
+      <AppLayout role="NUTRI" title="Solicitações de substituição">
         <PageContainer>
           <NutritionistSubstitutionRequestsScreen />
         </PageContainer>

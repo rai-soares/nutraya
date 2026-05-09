@@ -40,12 +40,13 @@ import {
   formatFriendlyDate,
   getTodayIsoDate,
 } from "@/modules/shared/utils/date";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 const progressCardConfig = [
-  { key: "calories", label: "Calories", unit: "kcal" },
-  { key: "protein", label: "Protein", unit: "g" },
-  { key: "carbs", label: "Carbs", unit: "g" },
-  { key: "fat", label: "Fat", unit: "g" },
+  { key: "calories", label: "Calorias", unit: "kcal" },
+  { key: "protein", label: "Proteína", unit: "g" },
+  { key: "carbs", label: "Carboidratos", unit: "g" },
+  { key: "fat", label: "Gorduras", unit: "g" },
 ] as const;
 
 export function PatientHomeScreen() {
@@ -84,7 +85,7 @@ export function PatientHomeScreen() {
       completed: boolean;
     }) => {
       if (!session?.token) {
-        throw new Error("You must be signed in.");
+        throw new Error("Faça login para continuar.");
       }
 
       if (completed) {
@@ -213,21 +214,31 @@ export function PatientHomeScreen() {
   }, [progressQuery.error]);
 
   if (progressQuery.isLoading) {
-    return <LoadingState message="Loading today's nutrition status..." />;
+    return <LoadingState message="Carregando seu progresso de hoje..." />;
   }
 
   if (setupState) {
     return (
       <Stack spacing={3}>
         <PageHeader
-          title={`Hi, ${session?.user.name?.split(" ")[0] ?? "there"}`}
-          subtitle="Your login worked. We are checking the nutrition setup for your account."
+          title={`Olá, ${session?.user.name?.split(" ")[0] ?? "paciente"}`}
+          subtitle="Seu acesso foi realizado com sucesso. Estamos verificando a configuração nutricional da sua conta."
         />
         <Alert severity="info">
-          Signed in successfully. The remaining step is finishing your nutrition
-          setup.
+          Seu acesso foi realizado com sucesso. Falta apenas concluir sua configuração nutricional.
         </Alert>
-        <EmptyState title={setupState.title} description={setupState.description} />
+        <EmptyState
+          title={
+            setupState.title === "Your account is active, but your goals are not ready yet"
+              ? "Sua conta está ativa, mas suas metas ainda não foram configuradas"
+              : "Sua conta está ativa, mas seu plano alimentar ainda não está pronto"
+          }
+          description={
+            setupState.description.includes("macro goals")
+              ? "Seu nutricionista ainda precisa definir suas metas de macros antes que seu progresso diário apareça aqui."
+              : "Seu nutricionista ainda precisa ativar um plano alimentar antes que sua rotina diária apareça aqui."
+          }
+        />
       </Stack>
     );
   }
@@ -235,12 +246,8 @@ export function PatientHomeScreen() {
   if (progressQuery.isError) {
     return (
       <ErrorState
-        title="Signed in, but we could not load your home"
-        message={
-          progressQuery.error instanceof Error
-            ? progressQuery.error.message
-            : "Unable to load progress."
-        }
+        title="Não foi possível carregar sua página inicial"
+        message={getErrorMessage(progressQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void progressQuery.refetch()}
       />
     );
@@ -249,12 +256,8 @@ export function PatientHomeScreen() {
   if (substitutionsQuery.isError) {
     return (
       <ErrorState
-        title="Meal requests unavailable"
-        message={
-          substitutionsQuery.error instanceof Error
-            ? substitutionsQuery.error.message
-            : "Unable to load substitution requests."
-        }
+        title="Não foi possível carregar as solicitações de substituição"
+        message={getErrorMessage(substitutionsQuery.error, "Não foi possível carregar os dados.")}
         onRetry={() => void substitutionsQuery.refetch()}
       />
     );
@@ -263,8 +266,8 @@ export function PatientHomeScreen() {
   if (!progressQuery.data) {
     return (
       <EmptyState
-        title="No daily status yet"
-        description="Create a macro goal and activate a meal plan to see today's progress."
+        title="Nenhum progresso diário disponível"
+        description="Defina metas de macros e ative um plano alimentar para acompanhar o progresso de hoje."
       />
     );
   }
@@ -272,8 +275,8 @@ export function PatientHomeScreen() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title={`Hi, ${session?.user.name?.split(" ")[0] ?? "there"}`}
-        subtitle={`Today is ${formatFriendlyDate(progressQuery.data.date)}.`}
+        title={`Olá, ${session?.user.name?.split(" ")[0] ?? "paciente"}`}
+        subtitle={`Hoje é ${formatFriendlyDate(progressQuery.data.date)}.`}
       />
 
       <AppCard>
@@ -286,18 +289,18 @@ export function PatientHomeScreen() {
           }}
         >
           <div>
-            <Typography variant="h3">Today&apos;s progress</Typography>
+            <Typography variant="h3">Progresso de hoje</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
-              Active meal plan: {progressQuery.data.mealPlan.title}
+              Plano alimentar ativo: {progressQuery.data.mealPlan.title}
             </Typography>
           </div>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
             <Chip
-              label={`${completedSummary.completed}/${completedSummary.total} meals completed`}
+              label={`${completedSummary.completed}/${completedSummary.total} refeições concluídas`}
               color="primary"
             />
             <Chip
-              label={`${completedSummary.pending} pending`}
+              label={`${completedSummary.pending} pendentes`}
               variant="outlined"
             />
           </Stack>
@@ -321,36 +324,32 @@ export function PatientHomeScreen() {
 
       <Stack spacing={2}>
         <PageHeader
-          title="Today&apos;s meals"
-          subtitle="Check meals off as you complete them. Daily macros update automatically."
+          title="Refeições de hoje"
+          subtitle="Marque as refeições conforme concluir. Os macros do dia são atualizados automaticamente."
         />
 
         {mealMutation.isError ? (
           <Alert severity="error">
-            {mealMutation.error instanceof Error
-              ? mealMutation.error.message
-              : "Unable to update meal status."}
+            {getErrorMessage(mealMutation.error, "Não foi possível atualizar o status da refeição.")}
           </Alert>
         ) : null}
 
         {substitutionMutation.isSuccess ? (
           <Alert severity="success">
-            Substitution sent and applied to today&apos;s progress with an approximate AI macro estimate.
+            Solicitação enviada para o nutricionista. A estimativa aproximada foi gerada com sucesso.
           </Alert>
         ) : null}
 
         {substitutionMutation.isError ? (
           <Alert severity="error">
-            {substitutionMutation.error instanceof Error
-              ? substitutionMutation.error.message
-              : "Unable to send the substitution request."}
+            {getErrorMessage(substitutionMutation.error, "Não foi possível enviar a solicitação de substituição.")}
           </Alert>
         ) : null}
 
         {progressQuery.data.meals.length === 0 ? (
           <EmptyState
-            title="No meals in the active plan"
-            description="Your nutritionist has not added meals to today's plan yet."
+            title="Nenhuma refeição cadastrada para hoje"
+            description="Seu nutricionista ainda não adicionou refeições ao plano alimentar ativo."
           />
         ) : (
           <Stack spacing={2}>
@@ -387,11 +386,9 @@ export function PatientHomeScreen() {
           }
           errorMessage={
             (uploadImageMutation.isError &&
-              uploadImageMutation.error instanceof Error &&
-              uploadImageMutation.error.message) ||
+              getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
             (substitutionMutation.isError &&
-              substitutionMutation.error instanceof Error &&
-              substitutionMutation.error.message) ||
+              getErrorMessage(substitutionMutation.error, "Não foi possível enviar a solicitação de substituição.")) ||
             null
           }
           onClose={() => setSelectedMealId(null)}
@@ -412,13 +409,13 @@ export function PatientHomeScreen() {
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>Substitution details</DialogTitle>
+          <DialogTitle>Detalhes da solicitação</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Box
                 component="img"
                 src={selectedSubstitution.imageUrl}
-                alt={`Substitution for ${selectedSubstitution.meal.name}`}
+                alt={`Solicitação de substituição para ${selectedSubstitution.meal.name}`}
                 sx={{
                   width: "100%",
                   maxHeight: 320,
@@ -429,23 +426,23 @@ export function PatientHomeScreen() {
               />
 
               <div>
-                <Typography variant="subtitle2">Meal</Typography>
+                <Typography variant="subtitle2">Refeição</Typography>
                 <Typography color="text.secondary">
                   {selectedSubstitution.meal.name}
                 </Typography>
               </div>
 
               <div>
-                <Typography variant="subtitle2">Your note</Typography>
+                <Typography variant="subtitle2">Sua observação</Typography>
                 <Typography color="text.secondary">
-                  {selectedSubstitution.note || "No note provided."}
+                  {selectedSubstitution.note || "Nenhuma observação informada."}
                 </Typography>
               </div>
 
               <div>
-                <Typography variant="subtitle2">Nutritionist feedback</Typography>
+                <Typography variant="subtitle2">Feedback do nutricionista</Typography>
                 <Typography color="text.secondary">
-                  {selectedSubstitution.nutritionistFeedback || "No feedback yet."}
+                  {selectedSubstitution.nutritionistFeedback || "Nenhum feedback ainda."}
                 </Typography>
               </div>
 
@@ -455,7 +452,7 @@ export function PatientHomeScreen() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setSelectedSubstitutionId(null)}>Close</Button>
+            <Button onClick={() => setSelectedSubstitutionId(null)}>Fechar</Button>
           </DialogActions>
         </Dialog>
       ) : null}

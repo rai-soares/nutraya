@@ -8,7 +8,7 @@ import { PatientChatScreen } from "@/modules/chat/components/patient-chat-screen
 export default function PatientChatPage() {
   return (
     <ProtectedRoute allowedRoles={["PATIENT"]}>
-      <AppLayout role="PATIENT" title="Chat">
+      <AppLayout role="PATIENT" title="Mensagens">
         <PageContainer>
           <PatientChatScreen />
         </PageContainer>

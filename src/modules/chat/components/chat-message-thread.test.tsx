@@ -43,7 +43,7 @@ describe("ChatMessageThread", () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByAltText("Chat image")).toBeInTheDocument();
+    expect(screen.getByAltText("Imagem do chat")).toBeInTheDocument();
     expect(screen.getByText("Lunch today")).toBeInTheDocument();
   });
 });

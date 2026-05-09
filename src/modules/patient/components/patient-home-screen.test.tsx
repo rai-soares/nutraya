@@ -92,11 +92,11 @@ describe("PatientHomeScreen", () => {
 
     expect(
       screen.getByText(
-        /signed in successfully\. the remaining step is finishing your nutrition setup\./i,
+        /seu acesso foi realizado com sucesso\. falta apenas concluir sua configuração nutricional\./i,
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/your nutritionist still needs to set your macro goals/i),
+      screen.getByText(/seu nutricionista ainda precisa definir suas metas de macros/i),
     ).toBeInTheDocument();
   });
 
@@ -222,10 +222,10 @@ describe("PatientHomeScreen", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /view substitution/i }));
+    fireEvent.click(screen.getByRole("button", { name: /ver solicitação/i }));
 
     expect(
-      screen.getByText(/applied to patient progress on saturday, may 9/i),
+      screen.getByText(/aplicado ao progresso do paciente em sábado, 9 de maio/i),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /apply to patient progress/i }),

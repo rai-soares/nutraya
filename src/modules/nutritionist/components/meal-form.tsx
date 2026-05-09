@@ -67,20 +67,20 @@ export function MealForm({
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       <TextField
-        label="Meal name"
+        label="Nome da refeição"
         error={Boolean(errors.name)}
         helperText={errors.name?.message}
         {...register("name", {
-          required: "Meal name is required.",
+          required: "Campo obrigatório",
         })}
       />
 
-      <TextField label="Description" multiline minRows={3} {...register("description")} />
+      <TextField label="Descrição" multiline minRows={3} {...register("description")} />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Scheduled time"
+            label="Horário"
             type="time"
             fullWidth
             slotProps={{
@@ -89,27 +89,27 @@ export function MealForm({
               },
             }}
             error={Boolean(errors.scheduledTime)}
-            helperText={errors.scheduledTime?.message ?? "Optional"}
+            helperText={errors.scheduledTime?.message ?? "Opcional"}
             {...register("scheduledTime", {
               pattern: {
                 value: /^$|^([01]\d|2[0-3]):[0-5]\d$/,
-                message: "Scheduled time must be in HH:MM format.",
+                message: "O horário deve estar no formato HH:MM",
               },
             })}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            label="Order"
+            label="Ordem"
             type="number"
             fullWidth
             error={Boolean(errors.order)}
             helperText={errors.order?.message}
             {...register("order", {
-              required: "Order is required.",
+              required: "Campo obrigatório",
               min: {
                 value: 0,
-                message: "Order must be non-negative.",
+                message: "Deve ser maior ou igual a 0",
               },
               valueAsNumber: true,
             })}
@@ -119,10 +119,10 @@ export function MealForm({
 
       <Grid container spacing={2}>
         {[
-          { field: "calories", label: "Calories" },
-          { field: "protein", label: "Protein" },
-          { field: "carbs", label: "Carbs" },
-          { field: "fat", label: "Fat" },
+          { field: "calories", label: "Calorias" },
+          { field: "protein", label: "Proteína" },
+          { field: "carbs", label: "Carboidratos" },
+          { field: "fat", label: "Gorduras" },
         ].map((item) => (
           <Grid key={item.field} size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -132,10 +132,10 @@ export function MealForm({
               error={Boolean(errors[item.field as keyof MealFormValues])}
               helperText={errors[item.field as keyof MealFormValues]?.message}
               {...register(item.field as keyof MealFormValues, {
-                required: `${item.label} is required.`,
+                required: "Campo obrigatório",
                 min: {
                   value: 0,
-                  message: `${item.label} must be non-negative.`,
+                  message: "Deve ser maior ou igual a 0",
                 },
                 valueAsNumber: true,
               })}
@@ -147,11 +147,11 @@ export function MealForm({
       <DialogActions sx={{ px: 0 }}>
         {onCancel ? (
           <Button onClick={onCancel} disabled={isSubmitting}>
-            Cancel
+            Cancelar
           </Button>
         ) : null}
         <Button type="submit" variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : meal ? "Update meal" : "Create meal"}
+          {isSubmitting ? "Salvando..." : meal ? "Salvar refeição" : "Criar refeição"}
         </Button>
       </DialogActions>
     </Stack>

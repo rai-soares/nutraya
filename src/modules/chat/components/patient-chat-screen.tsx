@@ -22,6 +22,7 @@ import {
   type ChatMessageFormSubmitValues,
 } from "@/modules/chat/components/chat-message-form";
 import { ChatMessageThread } from "@/modules/chat/components/chat-message-thread";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
 const CHAT_POLLING_INTERVAL_MS = 3000;
 
@@ -116,18 +117,14 @@ export function PatientChatScreen() {
   ]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
-    return <LoadingState message="Loading your chat..." />;
+    return <LoadingState message="Carregando conversa..." />;
   }
 
   if (conversationQuery.isError) {
     return (
       <ErrorState
-        title="Chat unavailable"
-        message={
-          conversationQuery.error instanceof Error
-            ? conversationQuery.error.message
-            : "Unable to load the conversation."
-        }
+        title="Chat indisponível"
+        message={getErrorMessage(conversationQuery.error, "Não foi possível carregar a conversa.")}
         onRetry={() => void conversationQuery.refetch()}
       />
     );
@@ -136,12 +133,8 @@ export function PatientChatScreen() {
   if (messagesQuery.isError) {
     return (
       <ErrorState
-        title="Messages unavailable"
-        message={
-          messagesQuery.error instanceof Error
-            ? messagesQuery.error.message
-            : "Unable to load messages."
-        }
+        title="Mensagens indisponíveis"
+        message={getErrorMessage(messagesQuery.error, "Não foi possível carregar as mensagens.")}
         onRetry={() => void messagesQuery.refetch()}
       />
     );
@@ -150,8 +143,8 @@ export function PatientChatScreen() {
   if (!conversationQuery.data || !messagesQuery.data || !session?.user.id) {
     return (
       <EmptyState
-        title="No chat available"
-        description="Your conversation will appear here once your nutritionist link is ready."
+        title="Nenhuma conversa disponível"
+        description="Sua conversa aparecerá aqui assim que o vínculo com o nutricionista estiver pronto."
       />
     );
   }
@@ -160,14 +153,12 @@ export function PatientChatScreen() {
     <Stack spacing={3}>
       <PageHeader
         title="Chat"
-        subtitle={`Talk directly with ${conversationQuery.data.nutritionist.name}.`}
+        subtitle={`Converse diretamente com ${conversationQuery.data.nutritionist.name}.`}
       />
 
       {markReadMutation.isError ? (
         <Alert severity="error">
-          {markReadMutation.error instanceof Error
-            ? markReadMutation.error.message
-            : "Unable to update read status."}
+          {getErrorMessage(markReadMutation.error, "Não foi possível atualizar a leitura das mensagens.")}
         </Alert>
       ) : null}
 
@@ -196,11 +187,9 @@ export function PatientChatScreen() {
           }
           errorMessage={
             (uploadImageMutation.isError &&
-              uploadImageMutation.error instanceof Error &&
-              uploadImageMutation.error.message) ||
+              getErrorMessage(uploadImageMutation.error, "Não foi possível enviar a imagem.")) ||
             (sendMessageMutation.isError &&
-              sendMessageMutation.error instanceof Error &&
-              sendMessageMutation.error.message) ||
+              getErrorMessage(sendMessageMutation.error, "Não foi possível enviar a mensagem.")) ||
             null
           }
           onSubmit={async (values: ChatMessageFormSubmitValues) => {

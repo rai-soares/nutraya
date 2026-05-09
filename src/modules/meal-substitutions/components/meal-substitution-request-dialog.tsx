@@ -86,11 +86,11 @@ export function MealSubstitutionRequestDialog({
 
   function validateSelectedFile(file: File) {
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      throw new Error("Unsupported image type. Use JPG, JPEG, PNG, or WEBP.");
+      throw new Error("Formato de imagem não suportado. Use JPG, JPEG, PNG ou WEBP.");
     }
 
     if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      throw new Error("Image file is too large. Maximum size is 5MB.");
+      throw new Error("A imagem é muito grande. O tamanho máximo é 5 MB.");
     }
   }
 
@@ -101,7 +101,7 @@ export function MealSubstitutionRequestDialog({
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle>Request substitution for {mealName}</DialogTitle>
+      <DialogTitle>Solicitar substituição para {mealName}</DialogTitle>
       <DialogContent>
         <Stack
           component="form"
@@ -109,7 +109,7 @@ export function MealSubstitutionRequestDialog({
           sx={{ pt: 1 }}
           onSubmit={handleSubmit(async (values) => {
             if (!selectedFile) {
-              setLocalError("Select an image before sending the request.");
+              setLocalError("Selecione uma imagem antes de enviar a solicitação.");
               return;
             }
 
@@ -144,14 +144,14 @@ export function MealSubstitutionRequestDialog({
               } catch (error) {
                 clearSelectedImage();
                 setLocalError(
-                  error instanceof Error ? error.message : "Unable to use this image.",
+                  error instanceof Error ? error.message : "Não foi possível usar esta imagem.",
                 );
               }
             }}
           />
 
           <Typography color="text.secondary">
-            Send a meal photo and an optional note so your nutritionist can review a substitution request.
+            Envie uma foto da refeição e, se quiser, uma observação para que seu nutricionista avalie a solicitação de substituição.
           </Typography>
 
           <Button
@@ -166,12 +166,12 @@ export function MealSubstitutionRequestDialog({
             }
             sx={{ alignSelf: "flex-start" }}
           >
-            {selectedFile ? "Change image" : "Select image"}
+            {selectedFile ? "Trocar imagem" : "Selecionar imagem"}
           </Button>
 
           {selectedFile && previewUrl ? (
             <Stack spacing={1.5}>
-              <Typography variant="subtitle2">Selected image preview</Typography>
+              <Typography variant="subtitle2">Pré-visualização da imagem</Typography>
               <Box
                 sx={{
                   position: "relative",
@@ -182,7 +182,7 @@ export function MealSubstitutionRequestDialog({
                 <Box
                   component="img"
                   src={previewUrl}
-                  alt="Selected substitution request preview"
+                  alt="Pré-visualização da solicitação de substituição"
                   onClick={() => setPreviewOpen(true)}
                   sx={{
                     width: "100%",
@@ -195,7 +195,7 @@ export function MealSubstitutionRequestDialog({
                   }}
                 />
                 <IconButton
-                  aria-label="Remove selected image"
+                  aria-label="Remover imagem selecionada"
                   onClick={clearSelectedImage}
                   size="small"
                   sx={{
@@ -216,8 +216,8 @@ export function MealSubstitutionRequestDialog({
           ) : null}
 
           <TextField
-            label="Note (optional)"
-            placeholder="Example: I do not have this meal available today."
+            label="Observação (opcional)"
+            placeholder="Exemplo: não tenho esta refeição disponível hoje."
             multiline
             minRows={3}
             fullWidth
@@ -226,7 +226,7 @@ export function MealSubstitutionRequestDialog({
             {...register("note", {
               validate: (value) => {
                 if (value.trim().length > 1000) {
-                  return "Note is too long.";
+                  return "A observação é muito longa.";
                 }
 
                 return true;
@@ -245,7 +245,7 @@ export function MealSubstitutionRequestDialog({
               }}
               sx={{ order: { xs: 2, sm: 1 } }}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="submit"
@@ -253,7 +253,7 @@ export function MealSubstitutionRequestDialog({
               disabled={isSubmitting || !selectedFile}
               sx={{ order: { xs: 1, sm: 2 } }}
             >
-              {isSubmitting ? "Sending request..." : "Submit request"}
+              {isSubmitting ? "Enviando solicitação..." : "Enviar solicitação"}
             </Button>
           </Stack>
 
@@ -268,7 +268,7 @@ export function MealSubstitutionRequestDialog({
                 <Box
                   component="img"
                   src={previewUrl}
-                  alt="Selected substitution request preview enlarged"
+                  alt="Imagem ampliada da solicitação de substituição"
                   sx={{
                     width: "100%",
                     maxHeight: "80vh",

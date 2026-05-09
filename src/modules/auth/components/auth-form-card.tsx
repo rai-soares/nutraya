@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
+import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 import type { AuthResponse } from "@/modules/shared/types/api";
 
 type FormMode = "login" | "register";
@@ -47,12 +48,12 @@ export function AuthFormCard({
                 Nutraya
               </Typography>
               <Typography variant="h2" sx={{ mt: 1 }}>
-                {isRegister ? "Create your nutritionist account" : "Welcome back"}
+                {isRegister ? "Criar conta de nutricionista" : "Entrar"}
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 1 }}>
                 {isRegister
-                  ? "Public signup is available only for nutritionists. Patients are created from the nutritionist panel."
-                  : "Sign in to access your nutrition workflow."}
+                  ? "O cadastro público está disponível apenas para nutricionistas. Pacientes são criados pelo painel do nutricionista."
+                  : "Entre para acessar seu acompanhamento nutricional."}
               </Typography>
             </div>
 
@@ -64,8 +65,10 @@ export function AuthFormCard({
                   await onSubmit(values);
                 } catch (error) {
                   setError("root", {
-                    message:
-                      error instanceof Error ? error.message : "Unable to continue.",
+                    message: getErrorMessage(
+                      error,
+                      "Não foi possível continuar. Tente novamente.",
+                    ),
                   });
                 }
               })}
@@ -74,64 +77,66 @@ export function AuthFormCard({
 
               {isRegister ? (
                 <TextField
-                  label="Name"
+                  label="Nome"
                   autoComplete="name"
                   error={Boolean(errors.name)}
                   helperText={errors.name?.message}
                   {...register("name", {
-                    required: "Name is required.",
+                    required: "Campo obrigatório",
                   })}
                 />
               ) : null}
 
               <TextField
-                label="Email"
+                label="E-mail"
                 type="email"
                 autoComplete="email"
                 error={Boolean(errors.email)}
                 helperText={errors.email?.message}
                 {...register("email", {
-                  required: "Email is required.",
+                  required: "Campo obrigatório",
                   pattern: {
                     value: /\S+@\S+\.\S+/,
-                    message: "Enter a valid email.",
+                    message: "E-mail inválido",
                   },
                 })}
               />
 
               <TextField
-                label="Password"
+                label="Senha"
                 type="password"
                 autoComplete={isRegister ? "new-password" : "current-password"}
                 error={Boolean(errors.password)}
                 helperText={errors.password?.message}
                 {...register("password", {
-                  required: "Password is required.",
+                  required: "Campo obrigatório",
                   minLength: {
                     value: 6,
-                    message: "Password must be at least 6 characters.",
+                    message: "A senha deve ter pelo menos 6 caracteres",
                   },
                 })}
               />
 
               <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
                 {isSubmitting
-                  ? "Please wait..."
+                  ? isRegister
+                    ? "Criando conta..."
+                    : "Entrando..."
                   : isRegister
-                    ? "Create nutritionist account"
-                    : "Sign in"}
+                    ? "Criar conta"
+                    : "Entrar"}
               </Button>
             </Stack>
 
             <Typography color="text.secondary" variant="body2">
-              {isRegister ? "Already have an account?" : "Need an account?"}{" "}
+              {isRegister ? "Já tem uma conta?" : "Precisa de uma conta?"}{" "}
               <Typography
                 component={Link}
                 href={isRegister ? "/login" : "/register"}
                 color="primary.main"
                 sx={{ fontWeight: 700 }}
               >
-                {isRegister ? "Sign in" : "Register"}
+                {isRegister ? "Entrar" : "Criar conta"}
               </Typography>
             </Typography>
           </Stack>

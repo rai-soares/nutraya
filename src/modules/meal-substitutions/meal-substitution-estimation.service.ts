@@ -13,6 +13,7 @@ const estimationInstructions = [
   "Do not invent hidden ingredients or foods outside the visible plate.",
   "If uncertainty is meaningful, set confidence to LOW.",
   "Mention that oils, sauces, preparation method, and hidden ingredients may affect accuracy.",
+  "Write estimatedFoods, portionEstimate, and aiNotes in Brazilian Portuguese.",
   "Return non-negative values for calories, protein, carbs, and fat.",
 ].join(" ");
 

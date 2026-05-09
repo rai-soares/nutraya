@@ -41,14 +41,14 @@ export function MacroProgressCard({
             </Typography>
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-            {remaining} {unit} remaining
+            {remaining} {unit} restantes
           </Typography>
         </div>
 
         <div>
           <LinearProgress variant="determinate" value={safeProgress} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {safeProgress}% complete
+            {safeProgress}% concluído
           </Typography>
         </div>
       </Stack>

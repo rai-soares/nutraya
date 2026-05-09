@@ -54,16 +54,16 @@ export function MealPlanForm({
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
       <TextField
-        label="Plan title"
+        label="Título do plano"
         error={Boolean(errors.title)}
         helperText={errors.title?.message}
         {...register("title", {
-          required: "Title is required.",
+          required: "Campo obrigatório",
         })}
       />
 
       <TextField
-        label="Description"
+        label="Descrição"
         multiline
         minRows={3}
         {...register("description")}
@@ -71,11 +71,11 @@ export function MealPlanForm({
 
       <FormControlLabel
         control={<Checkbox {...register("isActive")} />}
-        label="Make active now"
+        label="Ativar agora"
       />
 
       <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ alignSelf: "flex-start" }}>
-        {isSubmitting ? "Saving..." : "Create meal plan"}
+        {isSubmitting ? "Salvando..." : "Criar plano alimentar"}
       </Button>
     </Stack>
   );

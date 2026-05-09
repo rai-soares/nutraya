@@ -30,7 +30,7 @@ describe("MealChecklistItem", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Mark as completed" }));
+    fireEvent.click(screen.getByRole("button", { name: "Concluir refeição" }));
 
     expect(onToggle).toHaveBeenCalledWith("meal-1", false);
   });
@@ -64,10 +64,10 @@ describe("MealChecklistItem", () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText("Substitution applied")).toBeInTheDocument();
+    expect(screen.getByText("Substituição aplicada")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Substitute meal" }));
-    fireEvent.click(screen.getByRole("button", { name: "View substitution" }));
+    fireEvent.click(screen.getByRole("button", { name: "Solicitar substituição" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver solicitação" }));
 
     expect(onRequestSubstitution).toHaveBeenCalledWith("meal-1");
     expect(onViewSubstitutionRequest).toHaveBeenCalledWith("sub-1");

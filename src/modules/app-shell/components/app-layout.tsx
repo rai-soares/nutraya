@@ -24,12 +24,12 @@ type NavItem = {
 
 const navItemsByRole: Record<UserRole, NavItem[]> = {
   PATIENT: [
-    { href: "/patient", label: "Home" },
+    { href: "/patient", label: "Início" },
     { href: "/patient/chat", label: "Chat" },
   ],
   NUTRI: [
-    { href: "/nutritionist/patients", label: "Patients" },
-    { href: "/nutritionist/substitutions", label: "Substitutions" },
+    { href: "/nutritionist/patients", label: "Pacientes" },
+    { href: "/nutritionist/substitutions", label: "Substituições" },
     { href: "/nutritionist/chat", label: "Chat" },
   ],
 };
@@ -58,7 +58,15 @@ export function AppLayout({
           backgroundColor: "rgba(243, 247, 251, 0.86)",
         }}
       >
-        <Toolbar sx={{ gap: 2, minHeight: 72 }}>
+        <Toolbar
+          sx={{
+            gap: 2,
+            minHeight: 72,
+            alignItems: { xs: "flex-start", sm: "center" },
+            flexWrap: "wrap",
+            py: 1.5,
+          }}
+        >
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexGrow: 1 }}>
             <Box
               sx={{
@@ -84,7 +92,17 @@ export function AppLayout({
             </div>
           </Stack>
 
-          <Stack direction="row" spacing={1} sx={{ display: { xs: "none", sm: "flex" } }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              width: { xs: "100%", sm: "auto" },
+              order: { xs: 3, sm: 2 },
+            }}
+          >
             {navItemsByRole[role].map((item) => (
               <Button
                 key={item.href}
@@ -107,7 +125,7 @@ export function AppLayout({
               {session?.user.name}
             </Typography>
             <IconButton
-              aria-label="Sign out"
+              aria-label="Sair"
               onClick={() => {
                 signOut();
                 router.replace("/login");

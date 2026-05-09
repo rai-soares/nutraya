@@ -10,6 +10,10 @@ import {
 
 import type { MealSubstitution } from "@/modules/shared/types/api";
 import { formatFriendlyDate } from "@/modules/shared/utils/date";
+import {
+  AI_ESTIMATION_DISCLAIMER,
+  getConfidenceLabel,
+} from "@/modules/shared/utils/pt-br";
 
 export function hasMealSubstitutionEstimation(substitution: MealSubstitution) {
   return Boolean(
@@ -40,9 +44,9 @@ export function MealSubstitutionEstimationPanel({
         sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
       >
         <div>
-          <Typography variant="subtitle2">AI macro estimate</Typography>
+          <Typography variant="subtitle2">Macros estimados</Typography>
           <Typography color="text.secondary">
-            Approximate estimate from the visible meal photo only.
+            Estimativa aproximada com base apenas no que aparece na imagem.
           </Typography>
         </div>
       </Stack>
@@ -53,11 +57,11 @@ export function MealSubstitutionEstimationPanel({
         <>
           <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
             <Chip label={`${substitution.estimatedCalories} kcal`} size="small" />
-            <Chip label={`${substitution.estimatedProtein}g protein`} size="small" />
-            <Chip label={`${substitution.estimatedCarbs}g carbs`} size="small" />
-            <Chip label={`${substitution.estimatedFat}g fat`} size="small" />
+            <Chip label={`${substitution.estimatedProtein}g proteína`} size="small" />
+            <Chip label={`${substitution.estimatedCarbs}g carboidratos`} size="small" />
+            <Chip label={`${substitution.estimatedFat}g gorduras`} size="small" />
             <Chip
-              label={`Confidence ${substitution.confidence?.toLowerCase()}`}
+              label={`Confiança ${getConfidenceLabel(substitution.confidence)}`}
               size="small"
               color={
                 substitution.confidence === "HIGH"
@@ -73,40 +77,39 @@ export function MealSubstitutionEstimationPanel({
           <Divider />
 
           <div>
-            <Typography variant="subtitle2">Identified foods</Typography>
+            <Typography variant="subtitle2">Alimentos identificados</Typography>
             <Typography color="text.secondary">
               {substitution.estimatedFoods?.length
                 ? substitution.estimatedFoods.join(", ")
-                : "No foods confidently identified."}
+                : "Nenhum alimento identificado com confiança."}
             </Typography>
           </div>
 
           <div>
-            <Typography variant="subtitle2">Portion estimate</Typography>
+            <Typography variant="subtitle2">Estimativa de porção</Typography>
             <Typography color="text.secondary">
-              {substitution.portionEstimate || "No portion estimate available."}
+              {substitution.portionEstimate || "Nenhuma estimativa de porção disponível."}
             </Typography>
           </div>
 
-          <Alert severity="info">{substitution.aiNotes}</Alert>
+          <Alert severity="info">{AI_ESTIMATION_DISCLAIMER}</Alert>
 
           <Divider />
 
           <div>
-            <Typography variant="subtitle2">Progress application</Typography>
+            <Typography variant="subtitle2">Aplicação no progresso</Typography>
             <Typography color="text.secondary">
               {substitution.appliedToDailyLog
-                ? `Applied to patient progress on ${formatFriendlyDate(
+                ? `Aplicado ao progresso do paciente em ${formatFriendlyDate(
                     substitution.applicationDate ?? "",
                   )}.`
-                : "Not applied to patient progress yet."}
+                : "Ainda não aplicado ao progresso do paciente."}
             </Typography>
           </div>
         </>
       ) : (
         <Alert severity="info">
-          The estimate is still unavailable for this request. Daily progress is not
-          updated automatically from this result.
+          A estimativa ainda não está disponível para esta solicitação. O progresso diário não é atualizado automaticamente a partir deste resultado.
         </Alert>
       )}
     </Stack>

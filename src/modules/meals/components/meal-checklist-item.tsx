@@ -50,7 +50,7 @@ export function MealChecklistItem({
     >
       <Stack spacing={2}>
         <Stack
-          direction="row"
+          direction={{ xs: "column", sm: "row" }}
           spacing={2}
           sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
         >
@@ -67,7 +67,7 @@ export function MealChecklistItem({
                 <RadioButtonUncheckedRoundedIcon />
               )
             }
-            label={meal.completed ? "Completed" : "Pending"}
+            label={meal.completed ? "Concluída" : "Pendente"}
             variant={meal.completed ? "filled" : "outlined"}
           />
         </Stack>
@@ -80,15 +80,15 @@ export function MealChecklistItem({
 
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
           <Chip label={`${meal.calories} kcal`} size="small" />
-          <Chip label={`${meal.protein}g protein`} size="small" />
-          <Chip label={`${meal.carbs}g carbs`} size="small" />
-          <Chip label={`${meal.fat}g fat`} size="small" />
+          <Chip label={`${meal.protein}g proteína`} size="small" />
+          <Chip label={`${meal.carbs}g carboidratos`} size="small" />
+          <Chip label={`${meal.fat}g gorduras`} size="small" />
           {substitutionRequest ? (
             <Chip
               label={
                 substitutionRequest.appliedToDailyLog
-                  ? "Substitution applied"
-                  : "Substitution pending sync"
+                  ? "Substituição aplicada"
+                  : "Substituição aguardando sincronização"
               }
               size="small"
               color={substitutionRequest.appliedToDailyLog ? "success" : "warning"}
@@ -104,10 +104,10 @@ export function MealChecklistItem({
             onClick={() => onToggle(meal.id, meal.completed)}
           >
             {isPending
-              ? "Saving..."
+              ? "Salvando..."
               : meal.completed
-                ? "Mark as pending"
-                : "Mark as completed"}
+                ? "Desfazer conclusão"
+                : "Concluir refeição"}
           </Button>
           {onRequestSubstitution ? (
             <Button
@@ -115,7 +115,7 @@ export function MealChecklistItem({
               disabled={isPending}
               onClick={() => onRequestSubstitution(meal.id)}
             >
-              Substitute meal
+              Solicitar substituição
             </Button>
           ) : null}
           {substitutionRequest && onViewSubstitutionRequest ? (
@@ -124,7 +124,7 @@ export function MealChecklistItem({
               disabled={isPending}
               onClick={() => onViewSubstitutionRequest(substitutionRequest.id)}
             >
-              View substitution
+              Ver solicitação
             </Button>
           ) : null}
         </Stack>

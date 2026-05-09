@@ -1,6 +1,6 @@
 import { CircularProgress, Stack, Typography } from "@mui/material";
 
-export function LoadingState({ message = "Loading..." }: { message?: string }) {
+export function LoadingState({ message = "Carregando..." }: { message?: string }) {
   return (
     <Stack spacing={2} sx={{ py: 8, alignItems: "center", justifyContent: "center" }}>
       <CircularProgress />

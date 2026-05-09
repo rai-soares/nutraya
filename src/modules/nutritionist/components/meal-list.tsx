@@ -28,8 +28,8 @@ export function MealList({
   if (meals.length === 0) {
     return (
       <EmptyState
-        title="No meals in the active plan"
-        description="Add meals to give the patient a real daily routine to follow."
+        title="Nenhuma refeição no plano alimentar ativo"
+        description="Adicione refeições para montar a rotina diária do paciente."
       />
     );
   }
@@ -60,7 +60,7 @@ export function MealList({
                   <Chip icon={<AccessTimeRoundedIcon />} label={meal.scheduledTime} />
                 ) : null}
                 <Chip label={`${meal.calories} kcal`} color="primary" variant="outlined" />
-                <Chip label={`${meal.protein}P / ${meal.carbs}C / ${meal.fat}F`} variant="outlined" />
+                <Chip label={`${meal.protein}P / ${meal.carbs}C / ${meal.fat}G`} variant="outlined" />
               </Stack>
             </Stack>
 
@@ -70,7 +70,7 @@ export function MealList({
                 startIcon={<EditRoundedIcon />}
                 onClick={() => onEdit(meal)}
               >
-                Edit
+                Editar
               </Button>
               <Button
                 color="error"
@@ -79,7 +79,7 @@ export function MealList({
                 disabled={deletingMealId === meal.id}
                 onClick={() => onDelete(meal)}
               >
-                {deletingMealId === meal.id ? "Deleting..." : "Delete"}
+                {deletingMealId === meal.id ? "Excluindo..." : "Excluir"}
               </Button>
             </Stack>
           </Stack>
