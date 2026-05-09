@@ -9,8 +9,9 @@ import {
 } from "@mui/material";
 
 import type { MealSubstitution } from "@/modules/shared/types/api";
+import { formatFriendlyDate } from "@/modules/shared/utils/date";
 
-function hasEstimation(substitution: MealSubstitution) {
+export function hasMealSubstitutionEstimation(substitution: MealSubstitution) {
   return Boolean(
     substitution.estimatedAt &&
       substitution.estimatedCalories !== null &&
@@ -29,7 +30,7 @@ export function MealSubstitutionEstimationPanel({
   substitution: MealSubstitution;
   errorMessage?: string | null;
 }) {
-  const estimationAvailable = hasEstimation(substitution);
+  const estimationAvailable = hasMealSubstitutionEstimation(substitution);
 
   return (
     <Stack spacing={1.5}>
@@ -88,6 +89,19 @@ export function MealSubstitutionEstimationPanel({
           </div>
 
           <Alert severity="info">{substitution.aiNotes}</Alert>
+
+          <Divider />
+
+          <div>
+            <Typography variant="subtitle2">Progress application</Typography>
+            <Typography color="text.secondary">
+              {substitution.appliedToDailyLog
+                ? `Applied to patient progress on ${formatFriendlyDate(
+                    substitution.applicationDate ?? "",
+                  )}.`
+                : "Not applied to patient progress yet."}
+            </Typography>
+          </div>
         </>
       ) : (
         <Alert severity="info">

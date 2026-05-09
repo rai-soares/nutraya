@@ -35,7 +35,7 @@ describe("MealChecklistItem", () => {
     expect(onToggle).toHaveBeenCalledWith("meal-1", false);
   });
 
-  it("renders substitution status and handles the request action", () => {
+  it("renders substitution state and handles the substitution actions", () => {
     const onRequestSubstitution = vi.fn();
     const onViewSubstitutionRequest = vi.fn();
 
@@ -55,7 +55,7 @@ describe("MealChecklistItem", () => {
           }}
           substitutionRequest={{
             id: "sub-1",
-            status: "PENDING",
+            appliedToDailyLog: true,
           }}
           onToggle={vi.fn()}
           onRequestSubstitution={onRequestSubstitution}
@@ -64,10 +64,10 @@ describe("MealChecklistItem", () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText("Substitution pending")).toBeInTheDocument();
+    expect(screen.getByText("Substitution applied")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Request substitution" }));
-    fireEvent.click(screen.getByRole("button", { name: "View request" }));
+    fireEvent.click(screen.getByRole("button", { name: "Substitute meal" }));
+    fireEvent.click(screen.getByRole("button", { name: "View substitution" }));
 
     expect(onRequestSubstitution).toHaveBeenCalledWith("meal-1");
     expect(onViewSubstitutionRequest).toHaveBeenCalledWith("sub-1");

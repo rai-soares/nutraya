@@ -24,25 +24,13 @@ import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { LoadingState } from "@/modules/app-shell/components/loading-state";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
 import {
-  approveNutritionistMealSubstitution,
   listNutritionistMealSubstitutions,
-  rejectNutritionistMealSubstitution,
+  saveNutritionistMealSubstitutionFeedback,
 } from "@/modules/meal-substitutions/meal-substitution.api";
 import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
 import { listNutritionistPatients } from "@/modules/nutritionist/nutritionist.api";
-import type {
-  MealSubstitution,
-  MealSubstitutionStatus,
-} from "@/modules/shared/types/api";
-
-const reviewChipColorByStatus: Record<
-  MealSubstitutionStatus,
-  "warning" | "success" | "error"
-> = {
-  PENDING: "warning",
-  APPROVED: "success",
-  REJECTED: "error",
-};
+import type { MealSubstitution } from "@/modules/shared/types/api";
+import { formatFriendlyDate } from "@/modules/shared/utils/date";
 
 export function NutritionistSubstitutionRequestsScreen() {
   const queryClient = useQueryClient();
@@ -50,10 +38,8 @@ export function NutritionistSubstitutionRequestsScreen() {
   const token = session?.token ?? "";
   const authOptions = { token };
   const [selectedPatientId, setSelectedPatientId] = useState("all");
-  const [activeReview, setActiveReview] = useState<{
-    substitution: MealSubstitution;
-    action: "APPROVE" | "REJECT";
-  } | null>(null);
+  const [activeFeedbackSubstitution, setActiveFeedbackSubstitution] =
+    useState<MealSubstitution | null>(null);
   const [feedback, setFeedback] = useState("");
 
   const patientsQuery = useQuery({
@@ -76,54 +62,49 @@ export function NutritionistSubstitutionRequestsScreen() {
       ),
   });
 
-  const reviewMutation = useMutation({
+  const feedbackMutation = useMutation({
     mutationFn: async ({
       substitutionId,
-      action,
       nutritionistFeedback,
     }: {
       substitutionId: string;
-      action: "APPROVE" | "REJECT";
       nutritionistFeedback?: string;
-    }) => {
-      if (action === "APPROVE") {
-        return approveNutritionistMealSubstitution(
-          substitutionId,
-          { nutritionistFeedback },
-          authOptions,
-        );
-      }
-
-      return rejectNutritionistMealSubstitution(
+    }) =>
+      saveNutritionistMealSubstitutionFeedback(
         substitutionId,
         { nutritionistFeedback },
         authOptions,
-      );
-    },
+      ),
     onSuccess: async () => {
-      setActiveReview(null);
+      setActiveFeedbackSubstitution(null);
       setFeedback("");
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["nutritionist-meal-substitutions", session?.user.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["nutritionist-patient", activeReview?.substitution.patientId],
+          queryKey: [
+            "nutritionist-patient",
+            activeFeedbackSubstitution?.patientId,
+          ],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["patient-meal-substitutions"],
         }),
       ]);
     },
   });
 
-  const pendingCount = useMemo(
+  const appliedCount = useMemo(
     () =>
       (substitutionsQuery.data ?? []).filter(
-        (substitution) => substitution.status === "PENDING",
+        (substitution) => substitution.appliedToDailyLog,
       ).length,
     [substitutionsQuery.data],
   );
 
   if (patientsQuery.isLoading || substitutionsQuery.isLoading) {
-    return <LoadingState message="Loading substitution requests..." />;
+    return <LoadingState message="Loading substitutions..." />;
   }
 
   if (patientsQuery.isError) {
@@ -143,11 +124,11 @@ export function NutritionistSubstitutionRequestsScreen() {
   if (substitutionsQuery.isError) {
     return (
       <ErrorState
-        title="Requests unavailable"
+        title="Substitutions unavailable"
         message={
           substitutionsQuery.error instanceof Error
             ? substitutionsQuery.error.message
-            : "Unable to load substitution requests."
+            : "Unable to load substitutions."
         }
         onRetry={() => void substitutionsQuery.refetch()}
       />
@@ -158,8 +139,8 @@ export function NutritionistSubstitutionRequestsScreen() {
     <>
       <Stack spacing={3}>
         <PageHeader
-          title="Substitution requests"
-          subtitle="Review patient meal photos and approve or reject each substitution request."
+          title="Substitutions"
+          subtitle="Review substitutions already applied to patient progress and leave feedback when helpful."
         />
 
         <AppCard>
@@ -169,13 +150,14 @@ export function NutritionistSubstitutionRequestsScreen() {
             sx={{ justifyContent: "space-between" }}
           >
             <Stack spacing={1}>
-              <Typography variant="h3">Review queue</Typography>
+              <Typography variant="h3">Applied substitutions</Typography>
               <Typography color="text.secondary">
-                Pending requests stay at the top so you can make quick decisions.
+                Each substitution keeps the submitted photo, the AI estimate, and
+                any later nutritionist feedback.
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-              <Chip label={`${pendingCount} pending`} color="warning" />
+              <Chip label={`${appliedCount} applied`} color="success" />
               <Chip
                 label={`${substitutionsQuery.data?.length ?? 0} total`}
                 variant="outlined"
@@ -199,18 +181,18 @@ export function NutritionistSubstitutionRequestsScreen() {
           ))}
         </TextField>
 
-        {reviewMutation.isError ? (
+        {feedbackMutation.isError ? (
           <Alert severity="error">
-            {reviewMutation.error instanceof Error
-              ? reviewMutation.error.message
-              : "Unable to review this substitution request."}
+            {feedbackMutation.error instanceof Error
+              ? feedbackMutation.error.message
+              : "Unable to save feedback for this substitution."}
           </Alert>
         ) : null}
 
         {!substitutionsQuery.data || substitutionsQuery.data.length === 0 ? (
           <EmptyState
-            title="No substitution requests yet"
-            description="New patient photo requests will appear here once they are submitted."
+            title="No substitutions yet"
+            description="Patient substitutions will appear here after they are submitted and applied."
           />
         ) : (
           <Stack spacing={2}>
@@ -229,9 +211,13 @@ export function NutritionistSubstitutionRequestsScreen() {
                       </Typography>
                     </div>
                     <Chip
-                      label={substitution.status}
-                      color={reviewChipColorByStatus[substitution.status]}
-                      variant={substitution.status === "PENDING" ? "filled" : "outlined"}
+                      label={
+                        substitution.appliedToDailyLog
+                          ? "Applied to progress"
+                          : "Awaiting application"
+                      }
+                      color={substitution.appliedToDailyLog ? "success" : "warning"}
+                      variant={substitution.appliedToDailyLog ? "filled" : "outlined"}
                     />
                   </Stack>
 
@@ -245,7 +231,7 @@ export function NutritionistSubstitutionRequestsScreen() {
                       <Box
                         component="img"
                         src={substitution.imageUrl}
-                        alt={`${substitution.patient.name} substitution request for ${substitution.meal.name}`}
+                        alt={`${substitution.patient.name} substitution for ${substitution.meal.name}`}
                         sx={{
                           width: "100%",
                           maxWidth: 360,
@@ -271,40 +257,26 @@ export function NutritionistSubstitutionRequestsScreen() {
                         </Typography>
                       </div>
 
-                      <MealSubstitutionEstimationPanel
-                        substitution={substitution}
-                      />
+                      <MealSubstitutionEstimationPanel substitution={substitution} />
 
-                      {substitution.status === "PENDING" ? (
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                          <Button
-                            variant="contained"
-                            color="success"
-                            onClick={() => {
-                              setActiveReview({
-                                substitution,
-                                action: "APPROVE",
-                              });
-                              setFeedback("");
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={() => {
-                              setActiveReview({
-                                substitution,
-                                action: "REJECT",
-                              });
-                              setFeedback("");
-                            }}
-                          >
-                            Reject
-                          </Button>
-                        </Stack>
+                      {substitution.appliedToDailyLog ? (
+                        <Alert severity="success">
+                          Applied to progress on{" "}
+                          {formatFriendlyDate(substitution.applicationDate ?? "")}.
+                        </Alert>
                       ) : null}
+
+                      <Button
+                        variant="outlined"
+                        onClick={() => {
+                          setActiveFeedbackSubstitution(substitution);
+                          setFeedback(substitution.nutritionistFeedback ?? "");
+                        }}
+                      >
+                        {substitution.nutritionistFeedback
+                          ? "Edit feedback"
+                          : "Add feedback"}
+                      </Button>
                     </Stack>
                   </Stack>
                 </Stack>
@@ -315,21 +287,21 @@ export function NutritionistSubstitutionRequestsScreen() {
       </Stack>
 
       <Dialog
-        open={Boolean(activeReview)}
-        onClose={reviewMutation.isPending ? undefined : () => setActiveReview(null)}
+        open={Boolean(activeFeedbackSubstitution)}
+        onClose={
+          feedbackMutation.isPending
+            ? undefined
+            : () => setActiveFeedbackSubstitution(null)
+        }
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          {activeReview?.action === "APPROVE"
-            ? "Approve substitution request"
-            : "Reject substitution request"}
-        </DialogTitle>
+        <DialogTitle>Nutritionist feedback</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <Typography color="text.secondary">
-              {activeReview?.substitution.patient.name} requested a substitution for{" "}
-              {activeReview?.substitution.meal.name}.
+              {activeFeedbackSubstitution?.patient.name} submitted a substitution
+              for {` ${activeFeedbackSubstitution?.meal.name}`}.
             </Typography>
             <TextField
               label="Feedback (optional)"
@@ -343,32 +315,26 @@ export function NutritionistSubstitutionRequestsScreen() {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={() => setActiveReview(null)}
-            disabled={reviewMutation.isPending}
+            onClick={() => setActiveFeedbackSubstitution(null)}
+            disabled={feedbackMutation.isPending}
           >
             Cancel
           </Button>
           <Button
             variant="contained"
-            color={activeReview?.action === "APPROVE" ? "success" : "error"}
-            disabled={!activeReview || reviewMutation.isPending}
+            disabled={!activeFeedbackSubstitution || feedbackMutation.isPending}
             onClick={() => {
-              if (!activeReview) {
+              if (!activeFeedbackSubstitution) {
                 return;
               }
 
-              reviewMutation.mutate({
-                substitutionId: activeReview.substitution.id,
-                action: activeReview.action,
+              feedbackMutation.mutate({
+                substitutionId: activeFeedbackSubstitution.id,
                 nutritionistFeedback: feedback.trim() || undefined,
               });
             }}
           >
-            {reviewMutation.isPending
-              ? "Saving..."
-              : activeReview?.action === "APPROVE"
-                ? "Approve request"
-                : "Reject request"}
+            {feedbackMutation.isPending ? "Saving..." : "Save feedback"}
           </Button>
         </DialogActions>
       </Dialog>

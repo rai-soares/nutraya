@@ -136,9 +136,14 @@ export function PatientHomeScreen() {
     },
     onSuccess: async () => {
       setSelectedMealId(null);
-      await queryClient.invalidateQueries({
-        queryKey: ["patient-meal-substitutions", session?.user.id],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["patient-meal-substitutions", session?.user.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["patient-progress", session?.user.id, date],
+        }),
+      ]);
     },
   });
 
@@ -330,7 +335,7 @@ export function PatientHomeScreen() {
 
         {substitutionMutation.isSuccess ? (
           <Alert severity="success">
-            Substitution request sent with an approximate AI macro estimate for your nutritionist to review.
+            Substitution sent and applied to today&apos;s progress with an approximate AI macro estimate.
           </Alert>
         ) : null}
 
@@ -407,13 +412,13 @@ export function PatientHomeScreen() {
           fullWidth
           maxWidth="sm"
         >
-          <DialogTitle>Substitution request details</DialogTitle>
+          <DialogTitle>Substitution details</DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Box
                 component="img"
                 src={selectedSubstitution.imageUrl}
-                alt={`Substitution request for ${selectedSubstitution.meal.name}`}
+                alt={`Substitution for ${selectedSubstitution.meal.name}`}
                 sx={{
                   width: "100%",
                   maxHeight: 320,

@@ -7,6 +7,10 @@ import { ZodError } from "zod";
 
 import { AppError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
+import {
+  formatDateOnly,
+  parseDateOnly,
+} from "@/modules/daily-macro-logs/daily-macro-log.service";
 import { assertNutritionistCanAccessPatient } from "@/modules/patient-profile/patient-profile.service";
 
 import type {
@@ -14,7 +18,7 @@ import type {
   EstimateMealSubstitutionMacrosInput,
   MealSubstitutionMacroEstimationResponseDto,
   MealSubstitutionDto,
-  ReviewMealSubstitutionInput,
+  SaveMealSubstitutionFeedbackInput,
 } from "./meal-substitution.types";
 import { estimateMealPhotoMacros } from "./meal-substitution-estimation.service";
 
@@ -37,6 +41,11 @@ const mealSubstitutionSelect = {
   aiNotes: true,
   estimatedAt: true,
   reviewedAt: true,
+  appliedToDailyLog: true,
+  appliedAt: true,
+  appliedByUserId: true,
+  appliedDailyLogId: true,
+  applicationDate: true,
   createdAt: true,
   updatedAt: true,
   patient: {
@@ -79,6 +88,11 @@ function toMealSubstitutionDto(substitution: {
   aiNotes: string | null;
   estimatedAt: Date | null;
   reviewedAt: Date | null;
+  appliedToDailyLog: boolean;
+  appliedAt: Date | null;
+  appliedByUserId: string | null;
+  appliedDailyLogId: string | null;
+  applicationDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
   patient: {
@@ -104,6 +118,10 @@ function toMealSubstitutionDto(substitution: {
       : null,
     estimatedAt: substitution.estimatedAt?.toISOString() ?? null,
     reviewedAt: substitution.reviewedAt?.toISOString() ?? null,
+    appliedAt: substitution.appliedAt?.toISOString() ?? null,
+    applicationDate: substitution.applicationDate
+      ? formatDateOnly(substitution.applicationDate)
+      : null,
     createdAt: substitution.createdAt.toISOString(),
     updatedAt: substitution.updatedAt.toISOString(),
   };
@@ -169,6 +187,166 @@ function toMealSubstitutionMacroEstimationResponse(
   };
 }
 
+function assertSubstitutionHasEstimatedMacros(
+  substitution: Pick<
+    MealSubstitutionDto,
+    | "estimatedCalories"
+    | "estimatedProtein"
+    | "estimatedCarbs"
+    | "estimatedFat"
+  >,
+): asserts substitution is Pick<
+  MealSubstitutionDto,
+  "estimatedCalories" | "estimatedProtein" | "estimatedCarbs" | "estimatedFat"
+> & {
+  estimatedCalories: number;
+  estimatedProtein: number;
+  estimatedCarbs: number;
+  estimatedFat: number;
+} {
+  if (
+    substitution.estimatedCalories === null ||
+    substitution.estimatedProtein === null ||
+    substitution.estimatedCarbs === null ||
+    substitution.estimatedFat === null
+  ) {
+    throw new AppError(
+      "Meal substitution estimated macros are not available.",
+      409,
+    );
+  }
+}
+
+function assertNonNegativeEstimatedMacros(
+  substitution: Pick<
+    MealSubstitutionDto,
+    | "estimatedCalories"
+    | "estimatedProtein"
+    | "estimatedCarbs"
+    | "estimatedFat"
+  >,
+): void {
+  assertSubstitutionHasEstimatedMacros(substitution);
+
+  if (
+    substitution.estimatedCalories < 0 ||
+    substitution.estimatedProtein < 0 ||
+    substitution.estimatedCarbs < 0 ||
+    substitution.estimatedFat < 0
+  ) {
+    throw new AppError("Meal substitution estimated macros are invalid.", 409);
+  }
+}
+
+function getEstimatedMacrosForApplication(
+  substitution: Pick<
+    MealSubstitutionDto,
+    | "estimatedCalories"
+    | "estimatedProtein"
+    | "estimatedCarbs"
+    | "estimatedFat"
+  >,
+) {
+  assertNonNegativeEstimatedMacros(substitution);
+
+  if (
+    substitution.estimatedCalories === null ||
+    substitution.estimatedProtein === null ||
+    substitution.estimatedCarbs === null ||
+    substitution.estimatedFat === null
+  ) {
+    throw new AppError("Meal substitution estimated macros are invalid.", 409);
+  }
+
+  return {
+    calories: substitution.estimatedCalories,
+    protein: substitution.estimatedProtein,
+    carbs: substitution.estimatedCarbs,
+    fat: substitution.estimatedFat,
+  };
+}
+
+async function applyEstimatedMacrosToDailyProgress(
+  substitution: MealSubstitutionDto,
+  appliedByUserId: string,
+  applicationDate: string,
+  now = new Date(),
+): Promise<void> {
+  if (substitution.appliedToDailyLog) {
+    throw new AppError(
+      "Meal substitution estimated macros have already been applied.",
+      409,
+    );
+  }
+
+  const estimatedMacros = getEstimatedMacrosForApplication(substitution);
+  const parsedApplicationDate = parseDateOnly(applicationDate);
+
+  await prisma.$transaction(async (tx) => {
+    const existingLog = await tx.dailyMacroLog.upsert({
+      where: {
+        patientId_date: {
+          patientId: substitution.patientId,
+          date: parsedApplicationDate,
+        },
+      },
+      update: {},
+      create: {
+        patientId: substitution.patientId,
+        date: parsedApplicationDate,
+        caloriesConsumed: 0,
+        proteinConsumed: 0,
+        carbsConsumed: 0,
+        fatConsumed: 0,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const claimedSubstitution = await tx.mealSubstitution.updateMany({
+      where: {
+        id: substitution.id,
+        patientId: substitution.patientId,
+        appliedToDailyLog: false,
+        estimatedCalories: { not: null },
+        estimatedProtein: { not: null },
+        estimatedCarbs: { not: null },
+        estimatedFat: { not: null },
+      },
+      data: {
+        appliedToDailyLog: true,
+        appliedAt: now,
+        appliedByUserId,
+        appliedDailyLogId: existingLog.id,
+        applicationDate: parsedApplicationDate,
+      },
+    });
+
+    if (claimedSubstitution.count === 0) {
+      throw new AppError(
+        "Meal substitution estimated macros have already been applied.",
+        409,
+      );
+    }
+
+    await tx.dailyMacroLog.update({
+      where: {
+        patientId_date: {
+          patientId: substitution.patientId,
+          date: parsedApplicationDate,
+        },
+      },
+      data: {
+        caloriesConsumed: { increment: estimatedMacros.calories },
+        proteinConsumed: { increment: estimatedMacros.protein },
+        carbsConsumed: { increment: estimatedMacros.carbs },
+        fatConsumed: { increment: estimatedMacros.fat },
+      },
+    });
+  });
+}
+
 async function assertPatientExists(patientId: string): Promise<void> {
   const patient = await prisma.user.findUnique({
     where: { id: patientId },
@@ -230,6 +408,8 @@ export async function createMealSubstitution(
   input: CreateMealSubstitutionInput,
 ): Promise<MealSubstitutionDto> {
   const meal = await getPatientMealForActivePlan(patientId, input.mealId);
+  const createdAt = new Date();
+  const applicationDate = formatDateOnly(createdAt);
 
   const substitution = await prisma.mealSubstitution.create({
     data: {
@@ -244,12 +424,24 @@ export async function createMealSubstitution(
   });
 
   try {
-    const estimation = await estimateMealSubstitutionMacros(
+    await estimateMealSubstitutionMacros(
       toMealSubstitutionDto(substitution),
       { force: true },
     );
 
-    return getPatientMealSubstitutionById(patientId, estimation.substitutionId);
+    const estimatedSubstitution = await getPatientMealSubstitutionById(
+      patientId,
+      substitution.id,
+    );
+
+    await applyEstimatedMacrosToDailyProgress(
+      estimatedSubstitution,
+      patientId,
+      applicationDate,
+      createdAt,
+    );
+
+    return getPatientMealSubstitutionById(patientId, substitution.id);
   } catch (error) {
     await prisma.mealSubstitution
       .delete({
@@ -301,7 +493,7 @@ export async function listNutritionistMealSubstitutions(
       nutritionistId,
       ...(patientId ? { patientId } : {}),
     },
-    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    orderBy: [{ createdAt: "desc" }],
     select: mealSubstitutionSelect,
   });
 
@@ -398,57 +590,23 @@ export async function estimateNutritionistMealSubstitutionMacros(
   return estimateMealSubstitutionMacros(substitution, input);
 }
 
-async function reviewMealSubstitution(
+export async function saveNutritionistMealSubstitutionFeedback(
   nutritionistId: string,
   substitutionId: string,
-  status: "APPROVED" | "REJECTED",
-  input: ReviewMealSubstitutionInput,
+  input: SaveMealSubstitutionFeedbackInput,
 ): Promise<MealSubstitutionDto> {
   const substitution = await getNutritionistMealSubstitutionById(
     nutritionistId,
     substitutionId,
   );
-
-  if (substitution.status !== MealSubstitutionStatus.PENDING) {
-    throw new AppError("Meal substitution request has already been reviewed.", 409);
-  }
-
-  const reviewedAt = new Date();
   const updated = await prisma.mealSubstitution.update({
     where: { id: substitutionId },
     data: {
-      status,
       nutritionistFeedback: input.nutritionistFeedback?.trim() || null,
-      reviewedAt,
+      reviewedAt: new Date(),
     },
     select: mealSubstitutionSelect,
   });
 
   return toMealSubstitutionDto(updated);
-}
-
-export async function approveMealSubstitution(
-  nutritionistId: string,
-  substitutionId: string,
-  input: ReviewMealSubstitutionInput,
-): Promise<MealSubstitutionDto> {
-  return reviewMealSubstitution(
-    nutritionistId,
-    substitutionId,
-    MealSubstitutionStatus.APPROVED,
-    input,
-  );
-}
-
-export async function rejectMealSubstitution(
-  nutritionistId: string,
-  substitutionId: string,
-  input: ReviewMealSubstitutionInput,
-): Promise<MealSubstitutionDto> {
-  return reviewMealSubstitution(
-    nutritionistId,
-    substitutionId,
-    MealSubstitutionStatus.REJECTED,
-    input,
-  );
 }

@@ -24,7 +24,6 @@ vi.mock("@/modules/meal-substitutions/meal-substitution-estimation.service", () 
 }));
 
 import {
-  approveMealSubstitution,
   createMealSubstitution,
   estimateNutritionistMealSubstitutionMacros,
   estimatePatientMealSubstitutionMacros,
@@ -32,13 +31,15 @@ import {
   getPatientMealSubstitutionById,
   listNutritionistMealSubstitutions,
   listPatientMealSubstitutions,
-  rejectMealSubstitution,
+  saveNutritionistMealSubstitutionFeedback,
 } from "@/modules/meal-substitutions/meal-substitution.service";
 
 const createdAt = new Date("2026-05-09T12:00:00.000Z");
 const updatedAt = new Date("2026-05-09T12:30:00.000Z");
 
-function buildSubstitutionRecord(status = MealSubstitutionStatus.PENDING) {
+function buildSubstitutionRecord(
+  status: MealSubstitutionStatus = MealSubstitutionStatus.PENDING,
+) {
   return {
     id: "sub-1",
     patientId: "patient-1",
@@ -58,6 +59,11 @@ function buildSubstitutionRecord(status = MealSubstitutionStatus.PENDING) {
     aiNotes: null,
     estimatedAt: null,
     reviewedAt: null,
+    appliedToDailyLog: false,
+    appliedAt: null,
+    appliedByUserId: null,
+    appliedDailyLogId: null,
+    applicationDate: null,
     createdAt,
     updatedAt,
     patient: {
@@ -83,7 +89,7 @@ describe("meal substitution service", () => {
     estimateMealPhotoMacrosMock.mockReset();
   });
 
-  it("creates a substitution request with an AI estimate for a meal in the patient's active plan", async () => {
+  it("creates a substitution, estimates macros, and applies them immediately", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: "patient-1",
       role: UserRole.PATIENT,
@@ -123,18 +129,51 @@ describe("meal substitution service", () => {
         "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
       estimatedAt: updatedAt,
     });
-    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
-      ...buildSubstitutionRecord(),
-      estimatedCalories: 620,
-      estimatedProtein: 42,
-      estimatedCarbs: 68,
-      estimatedFat: 18,
-      estimatedFoods: ["rice", "grilled chicken", "salad"],
-      portionEstimate: "One medium plate",
-      confidence: "MEDIUM",
-      aiNotes:
-        "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
-      estimatedAt: updatedAt,
+    prismaMock.mealSubstitution.findUnique
+      .mockResolvedValueOnce({
+        ...buildSubstitutionRecord(),
+        estimatedCalories: 620,
+        estimatedProtein: 42,
+        estimatedCarbs: 68,
+        estimatedFat: 18,
+        estimatedFoods: ["rice", "grilled chicken", "salad"],
+        portionEstimate: "One medium plate",
+        confidence: "MEDIUM",
+        aiNotes:
+          "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+        estimatedAt: updatedAt,
+      })
+      .mockResolvedValueOnce({
+        ...buildSubstitutionRecord(),
+        estimatedCalories: 620,
+        estimatedProtein: 42,
+        estimatedCarbs: 68,
+        estimatedFat: 18,
+        estimatedFoods: ["rice", "grilled chicken", "salad"],
+        portionEstimate: "One medium plate",
+        confidence: "MEDIUM",
+        aiNotes:
+          "Approximate estimate based on visible foods. Oils, sauces, preparation method and hidden ingredients may affect accuracy.",
+        estimatedAt: updatedAt,
+        appliedToDailyLog: true,
+        appliedAt: new Date("2026-05-09T12:00:00.000Z"),
+        appliedByUserId: "patient-1",
+        appliedDailyLogId: "log-1",
+        applicationDate: new Date("2026-05-09T00:00:00.000Z"),
+      });
+    prismaMock.dailyMacroLog.upsert.mockResolvedValue({
+      id: "log-1",
+    });
+    prismaMock.mealSubstitution.updateMany.mockResolvedValue({
+      count: 1,
+    });
+    prismaMock.dailyMacroLog.update.mockResolvedValue({
+      id: "log-1",
+      date: new Date("2026-05-09T00:00:00.000Z"),
+      caloriesConsumed: 620,
+      proteinConsumed: 42,
+      carbsConsumed: 68,
+      fatConsumed: 18,
     });
 
     const result = await createMealSubstitution("patient-1", {
@@ -158,7 +197,27 @@ describe("meal substitution service", () => {
       "https://cdn.example.com/meal.jpg",
     );
     expect(prismaMock.mealSubstitution.update).toHaveBeenCalled();
-    expect(result.status).toBe("PENDING");
+    expect(prismaMock.dailyMacroLog.upsert).toHaveBeenCalled();
+    expect(prismaMock.mealSubstitution.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "sub-1",
+        patientId: "patient-1",
+        appliedToDailyLog: false,
+        estimatedCalories: { not: null },
+        estimatedProtein: { not: null },
+        estimatedCarbs: { not: null },
+        estimatedFat: { not: null },
+      },
+      data: {
+        appliedToDailyLog: true,
+        appliedAt: expect.any(Date),
+        appliedByUserId: "patient-1",
+        appliedDailyLogId: "log-1",
+        applicationDate: expect.any(Date),
+      },
+    });
+    expect(prismaMock.dailyMacroLog.update).toHaveBeenCalled();
+    expect(result.appliedToDailyLog).toBe(true);
     expect(result.estimatedCalories).toBe(620);
   });
 
@@ -250,48 +309,44 @@ describe("meal substitution service", () => {
     });
   });
 
-  it("approves a pending substitution and sets reviewed data", async () => {
+  it("saves nutritionist feedback after the substitution was applied", async () => {
     assertNutritionistCanAccessPatientMock.mockResolvedValue(undefined);
-    prismaMock.mealSubstitution.findUnique.mockResolvedValue(
-      buildSubstitutionRecord(),
-    );
+    prismaMock.mealSubstitution.findUnique.mockResolvedValue({
+      ...buildSubstitutionRecord(),
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      appliedToDailyLog: true,
+      applicationDate: new Date("2026-05-09T00:00:00.000Z"),
+    });
     prismaMock.mealSubstitution.update.mockResolvedValue({
-      ...buildSubstitutionRecord(MealSubstitutionStatus.APPROVED),
-      nutritionistFeedback: "Approved for today.",
+      ...buildSubstitutionRecord(),
+      nutritionistFeedback: "Keep the same protein source next time.",
       reviewedAt: updatedAt,
+      estimatedCalories: 620,
+      estimatedProtein: 42,
+      estimatedCarbs: 68,
+      estimatedFat: 18,
+      appliedToDailyLog: true,
+      applicationDate: new Date("2026-05-09T00:00:00.000Z"),
     });
 
-    const result = await approveMealSubstitution("nutri-1", "sub-1", {
-      nutritionistFeedback: "Approved for today.",
+    const result = await saveNutritionistMealSubstitutionFeedback("nutri-1", "sub-1", {
+      nutritionistFeedback: "Keep the same protein source next time.",
     });
 
     expect(prismaMock.mealSubstitution.update).toHaveBeenCalledWith({
       where: { id: "sub-1" },
       data: {
-        status: MealSubstitutionStatus.APPROVED,
-        nutritionistFeedback: "Approved for today.",
+        nutritionistFeedback: "Keep the same protein source next time.",
         reviewedAt: expect.any(Date),
       },
       select: expect.any(Object),
     });
-    expect(result.status).toBe("APPROVED");
-    expect(result.reviewedAt).toBe(updatedAt.toISOString());
-  });
-
-  it("rejects an already reviewed substitution", async () => {
-    assertNutritionistCanAccessPatientMock.mockResolvedValue(undefined);
-    prismaMock.mealSubstitution.findUnique.mockResolvedValue(
-      buildSubstitutionRecord(MealSubstitutionStatus.APPROVED),
+    expect(result.nutritionistFeedback).toBe(
+      "Keep the same protein source next time.",
     );
-
-    await expect(
-      rejectMealSubstitution("nutri-1", "sub-1", {
-        nutritionistFeedback: "No need.",
-      }),
-    ).rejects.toMatchObject({
-      message: "Meal substitution request has already been reviewed.",
-      statusCode: 409,
-    });
   });
 
   it("returns an existing estimation without re-running AI when force is not set", async () => {

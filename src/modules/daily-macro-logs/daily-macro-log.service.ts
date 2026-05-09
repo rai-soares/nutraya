@@ -21,7 +21,7 @@ const dailyMacroLogSelect = {
   updatedAt: true,
 } as const;
 
-function formatDateOnly(date: Date): string {
+export function formatDateOnly(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const day = String(date.getUTCDate()).padStart(2, "0");

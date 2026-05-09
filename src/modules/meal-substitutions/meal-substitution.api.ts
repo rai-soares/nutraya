@@ -14,7 +14,7 @@ export type CreateMealSubstitutionPayload = {
   note?: string;
 };
 
-export type ReviewMealSubstitutionPayload = {
+export type SaveMealSubstitutionFeedbackPayload = {
   nutritionistFeedback?: string;
 };
 
@@ -95,25 +95,13 @@ export function estimateNutritionistMealSubstitutionMacros(
   );
 }
 
-export function approveNutritionistMealSubstitution(
+export function saveNutritionistMealSubstitutionFeedback(
   substitutionId: string,
-  payload: ReviewMealSubstitutionPayload,
+  payload: SaveMealSubstitutionFeedbackPayload,
   options: AuthOptions,
 ) {
   return apiClient.post<MealSubstitution>(
-    `/api/nutritionist/meal-substitutions/${substitutionId}/approve`,
-    payload,
-    options,
-  );
-}
-
-export function rejectNutritionistMealSubstitution(
-  substitutionId: string,
-  payload: ReviewMealSubstitutionPayload,
-  options: AuthOptions,
-) {
-  return apiClient.post<MealSubstitution>(
-    `/api/nutritionist/meal-substitutions/${substitutionId}/reject`,
+    `/api/nutritionist/meal-substitutions/${substitutionId}/feedback`,
     payload,
     options,
   );

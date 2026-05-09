@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   mealSubstitutionEstimateMacrosBodySchema,
   nutritionistMealSubstitutionQuerySchema,
-  nutritionistReviewMealSubstitutionBodySchema,
+  nutritionistMealSubstitutionFeedbackBodySchema,
   patientMealSubstitutionBodySchema,
 } from "@/modules/meal-substitutions/meal-substitution.types";
 
@@ -27,8 +27,8 @@ describe("meal substitution types", () => {
     ).toThrow("Image URL must be a valid URL.");
   });
 
-  it("accepts an empty nutritionist review payload", () => {
-    const result = nutritionistReviewMealSubstitutionBodySchema.parse({});
+  it("accepts an empty nutritionist feedback payload", () => {
+    const result = nutritionistMealSubstitutionFeedbackBodySchema.parse({});
 
     expect(result.nutritionistFeedback).toBeUndefined();
   });

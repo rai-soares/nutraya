@@ -19,7 +19,7 @@ export const patientMealSubstitutionBodySchema = z.object({
     .optional(),
 });
 
-export const nutritionistReviewMealSubstitutionBodySchema = z.object({
+export const nutritionistMealSubstitutionFeedbackBodySchema = z.object({
   nutritionistFeedback: z
     .string()
     .trim()
@@ -39,8 +39,8 @@ export type CreateMealSubstitutionInput = z.infer<
   typeof patientMealSubstitutionBodySchema
 >;
 
-export type ReviewMealSubstitutionInput = z.infer<
-  typeof nutritionistReviewMealSubstitutionBodySchema
+export type SaveMealSubstitutionFeedbackInput = z.infer<
+  typeof nutritionistMealSubstitutionFeedbackBodySchema
 >;
 
 export type MealSubstitutionIdParamInput = z.infer<
@@ -84,6 +84,11 @@ export type MealSubstitutionDto = {
   aiNotes: string | null;
   estimatedAt: string | null;
   reviewedAt: string | null;
+  appliedToDailyLog: boolean;
+  appliedAt: string | null;
+  appliedByUserId: string | null;
+  appliedDailyLogId: string | null;
+  applicationDate: string | null;
   createdAt: string;
   updatedAt: string;
   patient: {

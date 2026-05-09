@@ -25,7 +25,7 @@ type MealChecklistItemProps = {
   };
   substitutionRequest?: {
     id: string;
-    status: "PENDING" | "APPROVED" | "REJECTED";
+    appliedToDailyLog: boolean;
   } | null;
   isPending?: boolean;
   onToggle: (mealId: string, completed: boolean) => void;
@@ -85,18 +85,14 @@ export function MealChecklistItem({
           <Chip label={`${meal.fat}g fat`} size="small" />
           {substitutionRequest ? (
             <Chip
-              label={`Substitution ${substitutionRequest.status.toLowerCase()}`}
+              label={
+                substitutionRequest.appliedToDailyLog
+                  ? "Substitution applied"
+                  : "Substitution pending sync"
+              }
               size="small"
-              color={
-                substitutionRequest.status === "APPROVED"
-                  ? "success"
-                  : substitutionRequest.status === "REJECTED"
-                    ? "error"
-                    : "warning"
-              }
-              variant={
-                substitutionRequest.status === "PENDING" ? "filled" : "outlined"
-              }
+              color={substitutionRequest.appliedToDailyLog ? "success" : "warning"}
+              variant={substitutionRequest.appliedToDailyLog ? "filled" : "outlined"}
             />
           ) : null}
         </Stack>
@@ -119,7 +115,7 @@ export function MealChecklistItem({
               disabled={isPending}
               onClick={() => onRequestSubstitution(meal.id)}
             >
-              Request substitution
+              Substitute meal
             </Button>
           ) : null}
           {substitutionRequest && onViewSubstitutionRequest ? (
@@ -128,7 +124,7 @@ export function MealChecklistItem({
               disabled={isPending}
               onClick={() => onViewSubstitutionRequest(substitutionRequest.id)}
             >
-              View request
+              View substitution
             </Button>
           ) : null}
         </Stack>

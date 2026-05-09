@@ -27,6 +27,11 @@ function buildSubstitution(overrides: Partial<Parameters<typeof MealSubstitution
     aiNotes: null,
     estimatedAt: null,
     reviewedAt: null,
+    appliedToDailyLog: false,
+    appliedAt: null,
+    appliedByUserId: null,
+    appliedDailyLogId: null,
+    applicationDate: null,
     createdAt: "2026-05-09T12:00:00.000Z",
     updatedAt: "2026-05-09T12:30:00.000Z",
     patient: {
@@ -83,5 +88,35 @@ describe("MealSubstitutionEstimationPanel", () => {
     expect(screen.getByText(/rice, grilled chicken, salad/i)).toBeInTheDocument();
     expect(screen.getByText(/confidence medium/i)).toBeInTheDocument();
     expect(screen.getByText(/hidden ingredients may affect accuracy/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/not applied to patient progress yet/i),
+    ).toBeInTheDocument();
+  });
+
+  it("renders the applied state when macros were added to progress", () => {
+    render(
+      <ThemeProvider theme={appTheme}>
+        <MealSubstitutionEstimationPanel
+          substitution={buildSubstitution({
+            estimatedCalories: 620,
+            estimatedProtein: 42,
+            estimatedCarbs: 68,
+            estimatedFat: 18,
+            confidence: "MEDIUM",
+            aiNotes: "Estimate available.",
+            estimatedAt: "2026-05-09T12:30:00.000Z",
+            appliedToDailyLog: true,
+            appliedAt: "2026-05-09T13:00:00.000Z",
+            appliedByUserId: "nutri-1",
+            appliedDailyLogId: "log-1",
+            applicationDate: "2026-05-09",
+          })}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(
+      screen.getByText(/applied to patient progress on saturday, may 9/i),
+    ).toBeInTheDocument();
   });
 });

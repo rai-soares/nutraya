@@ -96,6 +96,11 @@ export type MealSubstitution = {
   aiNotes: string | null;
   estimatedAt: string | null;
   reviewedAt: string | null;
+  appliedToDailyLog: boolean;
+  appliedAt: string | null;
+  appliedByUserId: string | null;
+  appliedDailyLogId: string | null;
+  applicationDate: string | null;
   createdAt: string;
   updatedAt: string;
   patient: {

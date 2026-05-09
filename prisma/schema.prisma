@@ -49,6 +49,7 @@ model User {
   receivedMessages        Message[]        @relation("ReceivedMessages")
   mealSubstitutionsAsPatient MealSubstitution[] @relation("PatientMealSubstitutions")
   mealSubstitutionsAsNutritionist MealSubstitution[] @relation("NutritionistMealSubstitutions")
+  appliedMealSubstitutions MealSubstitution[] @relation("AppliedMealSubstitutions")
 }
 
 model PatientProfile {
@@ -80,6 +81,7 @@ model DailyMacroLog {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   patient          User     @relation("PatientDailyMacroLogs", fields: [patientId], references: [id], onDelete: Cascade)
+  appliedSubstitutions MealSubstitution[] @relation("AppliedDailyMacroLogSubstitutions")
 
   @@unique([patientId, date])
 }
@@ -141,10 +143,17 @@ model MealSubstitution {
   aiNotes              String?
   estimatedAt          DateTime?
   reviewedAt           DateTime?
+  appliedToDailyLog    Boolean                @default(false)
+  appliedAt            DateTime?
+  appliedByUserId      String?
+  appliedDailyLogId    String?
+  applicationDate      DateTime?              @db.Date
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   patient              User                   @relation("PatientMealSubstitutions", fields: [patientId], references: [id], onDelete: Cascade)
   nutritionist         User                   @relation("NutritionistMealSubstitutions", fields: [nutritionistId], references: [id], onDelete: Restrict)
+  appliedByUser        User?                  @relation("AppliedMealSubstitutions", fields: [appliedByUserId], references: [id], onDelete: SetNull)
+  appliedDailyLog      DailyMacroLog?         @relation("AppliedDailyMacroLogSubstitutions", fields: [appliedDailyLogId], references: [id], onDelete: SetNull)
   meal                 Meal                   @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   @@index([patientId, createdAt])
