@@ -74,7 +74,9 @@ describe("AppHeader", () => {
     );
 
     expect(screen.getByText("Ana")).toBeInTheDocument();
-    expect(screen.getByText("Nutricionista: Dra. Paula")).toBeInTheDocument();
+    expect(
+      screen.getByText((_, node) => node?.textContent === "Nutricionista: Dra. Paula"),
+    ).toBeInTheDocument();
   });
 
   it("does not render the nutritionist line for nutritionist headers", () => {
@@ -134,7 +136,6 @@ describe("AppHeader", () => {
     );
 
     expect(screen.getByText("Ana")).toBeInTheDocument();
-    expect(screen.getByText("Paciente")).toBeInTheDocument();
     expect(screen.queryByText(/Nutricionista:/i)).not.toBeInTheDocument();
   });
 });

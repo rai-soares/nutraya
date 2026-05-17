@@ -66,4 +66,21 @@ describe("LoginScreen", () => {
       "/register",
     );
   });
+
+  it("shows the forgot password link on login", () => {
+    useSearchParamsMock.mockReturnValue({
+      get: () => null,
+    });
+
+    render(
+      <ThemeProvider theme={appTheme}>
+        <LoginScreen />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: /esqueci minha senha/i })).toHaveAttribute(
+      "href",
+      "/forgot-password",
+    );
+  });
 });

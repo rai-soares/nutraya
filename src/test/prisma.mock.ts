@@ -8,6 +8,12 @@ export const prismaMock = {
     findUnique: vi.fn(),
     update: vi.fn(),
   },
+  passwordResetToken: {
+    create: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    updateMany: vi.fn(),
+  },
   patientProfile: {
     create: vi.fn(),
     findMany: vi.fn(),
@@ -75,6 +81,10 @@ export function resetPrismaMock() {
   prismaMock.user.findMany.mockReset();
   prismaMock.user.findUnique.mockReset();
   prismaMock.user.update.mockReset();
+  prismaMock.passwordResetToken.create.mockReset();
+  prismaMock.passwordResetToken.findUnique.mockReset();
+  prismaMock.passwordResetToken.update.mockReset();
+  prismaMock.passwordResetToken.updateMany.mockReset();
   prismaMock.patientProfile.create.mockReset();
   prismaMock.patientProfile.findMany.mockReset();
   prismaMock.patientProfile.findUnique.mockReset();

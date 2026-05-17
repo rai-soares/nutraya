@@ -30,26 +30,27 @@ enum MealMacroConfidence {
 }
 
 model User {
-  id                      String           @id @default(cuid())
-  name                    String
-  email                   String           @unique
-  password                String
-  role                    UserRole
-  createdAt               DateTime         @default(now())
-  patientProfile          PatientProfile?  @relation("PatientUserProfile")
-  assignedPatients        PatientProfile[] @relation("NutritionistPatients")
-  macroGoal               MacroGoal?       @relation("PatientMacroGoal")
-  dailyMacroLogs          DailyMacroLog[]  @relation("PatientDailyMacroLogs")
-  mealPlansAsPatient      MealPlan[]       @relation("PatientMealPlans")
-  mealPlansAsNutritionist MealPlan[]       @relation("NutritionistMealPlans")
-  mealCompletions         MealCompletion[] @relation("PatientMealCompletions")
-  patientConversations    Conversation[]   @relation("PatientConversations")
-  nutritionistConversations Conversation[] @relation("NutritionistConversations")
-  sentMessages            Message[]        @relation("SentMessages")
-  receivedMessages        Message[]        @relation("ReceivedMessages")
-  mealSubstitutionsAsPatient MealSubstitution[] @relation("PatientMealSubstitutions")
-  mealSubstitutionsAsNutritionist MealSubstitution[] @relation("NutritionistMealSubstitutions")
-  appliedMealSubstitutions MealSubstitution[] @relation("AppliedMealSubstitutions")
+  id                              String               @id @default(cuid())
+  name                            String
+  email                           String               @unique
+  password                        String
+  role                            UserRole
+  createdAt                       DateTime             @default(now())
+  passwordResetTokens             PasswordResetToken[]
+  patientProfile                  PatientProfile?      @relation("PatientUserProfile")
+  assignedPatients                PatientProfile[]     @relation("NutritionistPatients")
+  macroGoal                       MacroGoal?           @relation("PatientMacroGoal")
+  dailyMacroLogs                  DailyMacroLog[]      @relation("PatientDailyMacroLogs")
+  mealPlansAsPatient              MealPlan[]           @relation("PatientMealPlans")
+  mealPlansAsNutritionist         MealPlan[]           @relation("NutritionistMealPlans")
+  mealCompletions                 MealCompletion[]     @relation("PatientMealCompletions")
+  patientConversations            Conversation[]       @relation("PatientConversations")
+  nutritionistConversations       Conversation[]       @relation("NutritionistConversations")
+  sentMessages                    Message[]            @relation("SentMessages")
+  receivedMessages                Message[]            @relation("ReceivedMessages")
+  mealSubstitutionsAsPatient      MealSubstitution[]   @relation("PatientMealSubstitutions")
+  mealSubstitutionsAsNutritionist MealSubstitution[]   @relation("NutritionistMealSubstitutions")
+  appliedMealSubstitutions        MealSubstitution[]   @relation("AppliedMealSubstitutions")
 }
 
 model PatientProfile {
@@ -71,16 +72,16 @@ model MacroGoal {
 }
 
 model DailyMacroLog {
-  id               String   @id @default(cuid())
-  patientId        String
-  date             DateTime @db.Date
-  caloriesConsumed Int
-  proteinConsumed  Int
-  carbsConsumed    Int
-  fatConsumed      Int
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  patient          User     @relation("PatientDailyMacroLogs", fields: [patientId], references: [id], onDelete: Cascade)
+  id                   String             @id @default(cuid())
+  patientId            String
+  date                 DateTime           @db.Date
+  caloriesConsumed     Int
+  proteinConsumed      Int
+  carbsConsumed        Int
+  fatConsumed          Int
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  patient              User               @relation("PatientDailyMacroLogs", fields: [patientId], references: [id], onDelete: Cascade)
   appliedSubstitutions MealSubstitution[] @relation("AppliedDailyMacroLogSubstitutions")
 
   @@unique([patientId, date])
@@ -104,7 +105,7 @@ model MealPlan {
 }
 
 model Meal {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   mealPlanId    String
   name          String
   description   String?
@@ -114,9 +115,9 @@ model Meal {
   protein       Int
   carbs         Int
   fat           Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  mealPlan      MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  mealPlan      MealPlan           @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
   completions   MealCompletion[]
   substitutions MealSubstitution[]
 
@@ -212,4 +213,17 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@index([receiverId, readAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([userId, usedAt])
 }

@@ -19,10 +19,12 @@ type FormValues = {
 export function AuthFormCard({
   mode,
   showRegisterLink = true,
+  showForgotPasswordLink = false,
   onSubmit,
 }: {
   mode: FormMode;
   showRegisterLink?: boolean;
+  showForgotPasswordLink?: boolean;
   onSubmit: (values: FormValues) => Promise<void>;
 }) {
   const {
@@ -126,8 +128,20 @@ export function AuthFormCard({
                     : "Entrando..."
                   : isRegister
                     ? "Criar conta"
-                    : "Entrar"}
+                  : "Entrar"}
               </Button>
+
+              {!isRegister && showForgotPasswordLink ? (
+                <Typography
+                  component={Link}
+                  href="/forgot-password"
+                  color="primary.main"
+                  variant="body2"
+                  sx={{ alignSelf: "center", fontWeight: 700 }}
+                >
+                  Esqueci minha senha
+                </Typography>
+              ) : null}
             </Stack>
 
             {isRegister || showRegisterLink ? (

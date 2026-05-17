@@ -22,6 +22,7 @@ export function LoginScreen() {
     <AuthFormCard
       mode="login"
       showRegisterLink={showRegisterLink}
+      showForgotPasswordLink
       onSubmit={async (values: AuthFormValues) => {
         const result = await apiClient.post<AuthResponse>("/api/auth/login", {
           email: values.email,
