@@ -24,9 +24,9 @@ describe("layout metadata", () => {
     expect(metadata.applicationName).toBe(BRAND.name);
     expect(metadata.description).toBe(BRAND.description);
     expect(metadata.icons).toMatchObject({
-      icon: BRAND.assets.icon,
-      shortcut: BRAND.assets.icon,
-      apple: BRAND.assets.icon,
+      icon: BRAND.assets.favicon,
+      shortcut: BRAND.assets.favicon,
+      apple: BRAND.assets.favicon,
     });
     expect(metadata.title).toMatchObject({
       default: BRAND.name,
