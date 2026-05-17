@@ -73,6 +73,7 @@ describe("AppHeader", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("link", { name: "Nutraya" })).toHaveAttribute("href", "/patient");
     expect(screen.getByText("Ana")).toBeInTheDocument();
     expect(
       screen.getByText((_, node) => node?.textContent === "Nutricionista: Dra. Paula"),
@@ -107,6 +108,10 @@ describe("AppHeader", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("link", { name: "Nutraya" })).toHaveAttribute(
+      "href",
+      "/nutritionist",
+    );
     expect(screen.getByText("Carlos")).toBeInTheDocument();
     expect(screen.queryByText(/Nutricionista:/i)).not.toBeInTheDocument();
   });

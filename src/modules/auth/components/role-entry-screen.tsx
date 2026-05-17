@@ -5,6 +5,7 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { getLoginPath } from "@/modules/auth/auth-storage";
+import { BrandLogoTagline } from "@/modules/shared/components/brand-logo";
 
 const entryOptions = [
   {
@@ -29,9 +30,7 @@ export function RoleEntryScreen() {
       <Box className="w-full max-w-5xl">
         <Stack spacing={3}>
           <Stack spacing={1.5} className="max-w-2xl">
-            <Typography variant="overline" color="primary.main">
-              Nutraya
-            </Typography>
+            <BrandLogoTagline size={160} clickable href="/" alt="Nutraya" />
             <Typography variant="h1">Seu acesso comeca por aqui.</Typography>
             <Typography color="text.secondary">
               Escolha como deseja entrar para continuar com um fluxo pensado para sua rotina.

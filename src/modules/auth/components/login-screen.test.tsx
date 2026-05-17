@@ -78,6 +78,7 @@ describe("LoginScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /esqueci minha senha/i })).toHaveAttribute(
       "href",
       "/forgot-password",

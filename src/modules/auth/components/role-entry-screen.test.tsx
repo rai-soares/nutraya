@@ -15,6 +15,7 @@ describe("RoleEntryScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     expect(screen.getByText("Sou paciente")).toBeInTheDocument();
     expect(screen.getByText("Sou nutricionista")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /entrar como paciente/i })).toHaveAttribute(

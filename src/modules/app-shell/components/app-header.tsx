@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import RestaurantRoundedIcon from "@mui/icons-material/RestaurantRounded";
 import {
   AppBar,
   Avatar,
@@ -17,10 +16,13 @@ import {
   Stack,
   Toolbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
 import { getPatientProfileSummary } from "@/modules/patient-profile/patient-profile.api";
+import { BrandLogo, BrandLogoIcon } from "@/modules/shared/components/brand-logo";
 import type { UserRole } from "@/modules/shared/types/api";
 
 type NavItem = {
@@ -53,6 +55,8 @@ export function AppHeader({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down("sm"));
   const { signOut, session } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [firstName = "Usuário"] = session?.user.name?.split(" ") ?? [];
@@ -99,6 +103,7 @@ export function AppHeader({
       })}
     </Stack>
   );
+  const homeHref = role === "PATIENT" ? "/patient" : "/nutritionist";
 
   return (
     <AppBar
@@ -121,29 +126,24 @@ export function AppHeader({
         }}
       >
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexGrow: 1 }}>
-          <Box
-            sx={{
-              width: 48,
-              height: 48,
-              borderRadius: "18px",
-              display: "grid",
-              placeItems: "center",
-              background:
-                "linear-gradient(135deg, rgba(18,116,107,1) 0%, rgba(108,167,196,1) 100%)",
-              color: "white",
-              boxShadow: "0 12px 22px rgba(18, 116, 107, 0.18)",
-            }}
-          >
-            <RestaurantRoundedIcon fontSize="small" />
-          </Box>
-          <div>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Nutraya
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {title}
-            </Typography>
-          </div>
+          <Stack spacing={0.5}>
+            {isCompact ? (
+              <BrandLogoIcon size={24} clickable href={homeHref} alt="Nutraya" />
+            ) : (
+              <BrandLogo
+                variant="horizontal"
+                size={30}
+                clickable
+                href={homeHref}
+                alt="Nutraya"
+              />
+            )}
+            {!isCompact && (
+              <Typography variant="body2" color="text.secondary">
+                {title}
+              </Typography>
+            )}
+          </Stack>
         </Stack>
 
         <Box sx={{ display: { xs: "none", md: "block" } }}>{navigation}</Box>
@@ -220,7 +220,7 @@ export function AppHeader({
         }}
       >
         <Stack spacing={2.5}>
-          <Typography variant="h3">Navegação</Typography>
+          <Typography variant="h3">Menu</Typography>
           {navigation}
         </Stack>
       </Drawer>

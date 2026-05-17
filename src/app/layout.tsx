@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { BRAND } from "@/config/branding";
 import { AppProviders } from "@/modules/app-shell/providers/app-providers";
 
 import "./globals.css";
@@ -16,8 +17,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nutraya",
-  description: "Acompanhamento nutricional para pacientes e nutricionistas.",
+  title: {
+    default: BRAND.name,
+    template: `%s | ${BRAND.name}`,
+  },
+  applicationName: BRAND.name,
+  description: BRAND.description,
+  icons: {
+    icon: BRAND.assets.favicon,
+    shortcut: BRAND.assets.favicon,
+    apple: BRAND.assets.favicon,
+  },
 };
 
 export default function RootLayout({

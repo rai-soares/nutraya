@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
+import { BrandLogoTagline } from "@/modules/shared/components/brand-logo";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 import type { AuthResponse } from "@/modules/shared/types/api";
 
@@ -48,9 +49,7 @@ export function AuthFormCard({
         <AppCard>
           <Stack spacing={3}>
             <div>
-              <Typography variant="overline" color="primary.main">
-                Nutraya
-              </Typography>
+              <BrandLogoTagline size={40} clickable href="/" alt="Nutraya" />
               <Typography variant="h2" sx={{ mt: 1 }}>
                 {isRegister ? "Criar conta de nutricionista" : "Entrar"}
               </Typography>

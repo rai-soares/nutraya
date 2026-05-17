@@ -8,6 +8,7 @@ import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material"
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { requestPasswordReset } from "@/modules/auth/auth.api";
 import { FORGOT_PASSWORD_MESSAGE } from "@/modules/auth/password-reset.types";
+import { BrandLogoTagline } from "@/modules/shared/components/brand-logo";
 
 type ForgotPasswordFormValues = {
   email: string;
@@ -32,9 +33,7 @@ export function ForgotPasswordScreen() {
         <AppCard>
           <Stack spacing={3}>
             <div>
-              <Typography variant="overline" color="primary.main">
-                Nutraya
-              </Typography>
+              <BrandLogoTagline size={40} clickable href="/" alt="Nutraya" />
               <Typography variant="h2" sx={{ mt: 1 }}>
                 Esqueci minha senha
               </Typography>

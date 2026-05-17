@@ -8,6 +8,7 @@ import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material"
 
 import { AppCard } from "@/modules/app-shell/components/app-card";
 import { submitPasswordReset } from "@/modules/auth/auth.api";
+import { BrandLogoTagline } from "@/modules/shared/components/brand-logo";
 
 type ResetPasswordFormValues = {
   password: string;
@@ -42,9 +43,7 @@ export function ResetPasswordScreen() {
         <AppCard>
           <Stack spacing={3}>
             <div>
-              <Typography variant="overline" color="primary.main">
-                Nutraya
-              </Typography>
+              <BrandLogoTagline size={40} clickable href="/" alt="Nutraya" />
               <Typography variant="h2" sx={{ mt: 1 }}>
                 Redefinir senha
               </Typography>

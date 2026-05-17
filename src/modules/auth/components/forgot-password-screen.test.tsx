@@ -32,6 +32,7 @@ describe("ForgotPasswordScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("E-mail"), {
       target: { value: "ana@mail.com" },
     });
@@ -57,6 +58,7 @@ describe("ForgotPasswordScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("E-mail"), {
       target: { value: "ana@mail.com" },
     });

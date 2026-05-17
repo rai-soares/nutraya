@@ -36,6 +36,7 @@ describe("ResetPasswordScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nova senha"), {
       target: { value: "123456" },
     });
@@ -59,6 +60,7 @@ describe("ResetPasswordScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nova senha"), {
       target: { value: "123456" },
     });
@@ -87,6 +89,7 @@ describe("ResetPasswordScreen", () => {
       </ThemeProvider>,
     );
 
+    expect(screen.getByRole("img", { name: "Nutraya" })).toBeInTheDocument();
     expect(
       screen.getByText("Link inválido ou expirado. Solicite uma nova redefinição de senha."),
     ).toBeInTheDocument();
