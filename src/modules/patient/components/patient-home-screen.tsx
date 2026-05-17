@@ -239,48 +239,6 @@ export function PatientHomeScreen() {
         subtitle={`Hoje é ${formatFriendlyDate(progressQuery.data.date)}.`}
       />
 
-      <AppCard
-        sx={{
-          background:
-            "linear-gradient(135deg, rgba(18,116,107,0.96) 0%, rgba(70,138,164,0.95) 100%)",
-          color: "common.white",
-        }}
-      >
-        <Stack spacing={2.5}>
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={2}
-            sx={{ justifyContent: "space-between", alignItems: { md: "center" } }}
-          >
-            <div>
-              <Typography variant="subtitle2" sx={{ color: "rgba(255,255,255,0.75)" }}>
-                Progresso de hoje
-              </Typography>
-              <Typography variant="h2" sx={{ mt: 1 }}>
-                {progressQuery.data.mealPlan.title}
-              </Typography>
-              <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.78)", maxWidth: 540 }}>
-                Acompanhe o consumo do dia, marque suas refeições e envie substituições quando precisar.
-              </Typography>
-            </div>
-
-            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-              <MetricPill
-                label={`${completedSummary.completed}/${completedSummary.total} concluídas`}
-                tone="success"
-              />
-              <MetricPill label={`${completedSummary.pending} pendentes`} tone="warning" />
-            </Stack>
-          </Stack>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} useFlexGap sx={{ flexWrap: "wrap" }}>
-            <MetricPill label="Metas do dia" tone="primary" />
-            <MetricPill label="Consumido" tone="default" />
-            <MetricPill label="Restante" tone="default" />
-          </Stack>
-        </Stack>
-      </AppCard>
-
       <SectionCard
         title="Metas do dia"
         description="Seus macros ficam atualizados automaticamente conforme as refeições são concluídas."

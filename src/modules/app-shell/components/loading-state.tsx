@@ -9,7 +9,7 @@ export function LoadingState({ message = "Carregando..." }: { message?: string }
         px: 3,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 7,
+        borderRadius: 1,
         border: "1px solid rgba(18, 116, 107, 0.10)",
         backgroundColor: "rgba(255,255,255,0.78)",
       }}

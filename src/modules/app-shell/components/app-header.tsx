@@ -108,6 +108,7 @@ export function AppHeader({
           gap: 2,
           minHeight: 80,
           px: { xs: 2, sm: 3.5, lg: 5 },
+          py: 1.5,
         }}
       >
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexGrow: 1 }}>
@@ -163,14 +164,14 @@ export function AppHeader({
             >
               {firstName.slice(0, 1).toUpperCase()}
             </Avatar>
-            <div>
+            <Stack spacing={0.5} sx={{ lineHeight: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {firstName}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {role === "PATIENT" ? "Paciente" : "Nutricionista"}
               </Typography>
-            </div>
+            </Stack>
           </Stack>
 
           <IconButton
