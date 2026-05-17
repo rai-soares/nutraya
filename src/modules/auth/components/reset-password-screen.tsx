@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
@@ -15,9 +15,12 @@ type ResetPasswordFormValues = {
   confirmPassword: string;
 };
 
+const INVALID_LINK_MESSAGE =
+  "Link inválido ou expirado. Solicite uma nova redefinição de senha.";
+
 export function ResetPasswordScreen() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const token = searchParams.get("token")?.trim() ?? "";
   const {
@@ -52,11 +55,7 @@ export function ResetPasswordScreen() {
               </Typography>
             </div>
 
-            {!token ? (
-              <Alert severity="error">
-                Link inválido ou expirado. Solicite uma nova redefinição de senha.
-              </Alert>
-            ) : null}
+            {!token ? <Alert severity="error">{INVALID_LINK_MESSAGE}</Alert> : null}
 
             <Stack
               component="form"
@@ -65,25 +64,18 @@ export function ResetPasswordScreen() {
                 setSubmitError(null);
 
                 if (!token) {
-                  setSubmitError(
-                    "Link inválido ou expirado. Solicite uma nova redefinição de senha.",
-                  );
+                  setSubmitError(INVALID_LINK_MESSAGE);
                   return;
                 }
 
                 try {
-                  const response = await submitPasswordReset(token, values.password);
-                  setSuccessMessage(response.message);
+                  await submitPasswordReset(token, values.password);
+                  router.replace("/");
                 } catch {
-                  setSubmitError(
-                    "Link inválido ou expirado. Solicite uma nova redefinição de senha.",
-                  );
+                  setSubmitError(INVALID_LINK_MESSAGE);
                 }
               })}
             >
-              {successMessage ? (
-                <Alert severity="success">Sua senha foi redefinida com sucesso.</Alert>
-              ) : null}
               {submitError ? <Alert severity="error">{submitError}</Alert> : null}
 
               <TextField
@@ -113,12 +105,7 @@ export function ResetPasswordScreen() {
                 })}
               />
 
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                disabled={isSubmitting || Boolean(successMessage) || !token}
-              >
+              <Button type="submit" variant="contained" size="large" disabled={isSubmitting || !token}>
                 {isSubmitting ? "Redefinindo..." : "Redefinir senha"}
               </Button>
             </Stack>

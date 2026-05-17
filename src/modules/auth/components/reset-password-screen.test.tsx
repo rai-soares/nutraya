@@ -4,12 +4,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ThemeProvider } from "@mui/material";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { useSearchParamsMock, submitPasswordResetMock } = vi.hoisted(() => ({
+const { useRouterMock, useSearchParamsMock, submitPasswordResetMock } = vi.hoisted(() => ({
+  useRouterMock: vi.fn(),
   useSearchParamsMock: vi.fn(),
   submitPasswordResetMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
+  useRouter: useRouterMock,
   useSearchParams: useSearchParamsMock,
 }));
 
@@ -22,8 +24,12 @@ import { appTheme } from "@/theme/app-theme";
 
 describe("ResetPasswordScreen", () => {
   beforeEach(() => {
+    useRouterMock.mockReset();
     useSearchParamsMock.mockReset();
     submitPasswordResetMock.mockReset();
+    useRouterMock.mockReturnValue({
+      replace: vi.fn(),
+    });
     useSearchParamsMock.mockReturnValue({
       get: (key: string) => (key === "token" ? "raw-token" : null),
     });
@@ -49,7 +55,11 @@ describe("ResetPasswordScreen", () => {
     expect(submitPasswordResetMock).not.toHaveBeenCalled();
   });
 
-  it("submits the new password and shows the success state", async () => {
+  it("submits the new password and redirects to the home page", async () => {
+    const replace = vi.fn();
+    useRouterMock.mockReturnValue({
+      replace,
+    });
     submitPasswordResetMock.mockResolvedValue({
       message: "Senha redefinida com sucesso.",
     });
@@ -73,9 +83,9 @@ describe("ResetPasswordScreen", () => {
       expect(submitPasswordResetMock).toHaveBeenCalledWith("raw-token", "123456");
     });
 
-    expect(
-      await screen.findByText("Sua senha foi redefinida com sucesso."),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith("/");
+    });
   });
 
   it("shows the invalid link state when the token is missing", () => {
