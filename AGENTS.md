@@ -2,22 +2,33 @@
 
 ## Product Overview
 
-Nutraya is a responsive web MVP for nutrition follow-up between nutritionists and patients.
+Nutraya is a responsive web application for nutrition follow-up between nutritionists and patients.
 
-The platform must allow:
+The repository is no longer documentation-first. The current codebase already includes implemented frontend flows, API routes, Prisma schema, provider integrations, and automated tests. Documentation in this file and in `./ai/rules` must reflect the implemented product, not the original planning-only MVP.
 
-- nutritionists to define meal plans and macro goals
-- patients to track their diet and daily macro progress
-- patients to send meal photos and receive estimated macros
-- both sides to communicate through chat
+## Current Product Scope
 
-This repository is documentation-first at this stage. The goal is to establish a clear implementation standard before application code is introduced.
+The application currently supports these main capabilities:
 
-## Official MVP Stack
+- authentication with register and login flows
+- role-based access for `NUTRI` and `PATIENT`
+- patient creation/linking by the nutritionist
+- nutritionist to patient relationship management
+- manual macro goal configuration per patient
+- meal plan creation, activation, and meal management
+- patient daily progress based on macro goals and consumed macros
+- meal completion tracking by date
+- asynchronous chat between nutritionist and patient with text and image messages
+- meal substitution requests with image upload
+- AI macro estimation for substitution images
+- nutritionist feedback on substitution requests
+- automatic application of estimated substitution macros to the daily log
 
-The official architecture for the initial MVP is:
+## Official Stack In Use
 
-- Next.js fullstack
+The current application stack is:
+
+- Next.js App Router fullstack
 - React
 - Tailwind CSS
 - MUI
@@ -25,62 +36,70 @@ The official architecture for the initial MVP is:
 - React Hook Form
 - PostgreSQL
 - Prisma
+- Vitest
 
-Auth must be implemented in a way that preserves MVP simplicity. The implementation may use JWT directly or a managed provider later, but current project decisions must not depend on a specific vendor.
+Current integration decisions already present in the codebase:
 
-Storage and AI providers are integration points, not fixed platform commitments at this stage.
+- JWT bearer auth
+- Cloudinary for image upload/storage
+- Gemini for image-based macro estimation
 
-Frontend styling should combine Tailwind CSS and MUI with clear responsibilities:
+These provider choices are now part of the implemented architecture. They may be replaced later, but new work must respect the existing service boundaries instead of spreading provider-specific logic across the app.
 
-- Tailwind CSS for layout, spacing, responsive composition, and utility styling
-- MUI for accessible UI primitives, form controls, feedback components, and interaction patterns
-
-## MVP Principles
+## Current Product Principles
 
 All work in this repository should follow these principles:
 
-- simplify without removing required features
-- prioritize usable delivery over technical perfection
-- avoid premature abstractions and excessive modeling
-- keep meal plan food definitions as text in the MVP
-- keep chat asynchronous and non-realtime at first
-- accept estimation error in AI-assisted photo analysis
-- prefer direct, maintainable flows over highly generic systems
+- preserve the implemented module boundaries
+- prefer direct flows over premature abstraction
+- keep the monolithic fullstack architecture simple and understandable
+- treat the current application behavior as the source of truth unless the change intentionally redesigns it
+- keep chat asynchronous and polling-based unless a clear product need justifies realtime
+- accept estimation error in AI-assisted meal analysis
+- prefer maintainable behavior over speculative extensibility
 
 ## Core Product Modules
 
-The MVP must cover these functional modules:
+The current codebase is centered on these modules:
 
 - auth
 - users
-- nutritionist to patient relationship
+- patient profile and nutritionist linkage
 - macro goals
-- daily consumption tracking
-- meal plans
+- daily macro logs and progress
+- meal plans and meals
+- meal completions
 - chat
-- meal photos and macro estimation
+- uploads
+- meal substitutions
+- Gemini-based macro estimation
 
-## Delivery Priority
+## Current Delivery State
 
-Development should follow this order unless a specific implementation need justifies a small adjustment:
+The original MVP foundation has already been implemented in code.
 
-1. auth
-2. users
-3. nutritionist to patient relationship
-4. macro goals
-5. patient home with daily progress
-6. meal plans
-7. chat
-8. photo upload
-9. AI macro estimation
+The active application surface includes:
+
+- `/login`
+- `/register`
+- `/patient`
+- `/patient/chat`
+- `/nutritionist`
+- `/nutritionist/patients`
+- `/nutritionist/patients/[patientId]`
+- `/nutritionist/chat`
+- `/nutritionist/substitutions`
+
+When planning new work, assume we are extending an existing product foundation rather than defining the first MVP from scratch.
 
 ## Working Rules
 
 - Follow the detailed decisions in `./ai/rules`.
 - When `AGENTS.md` and a rule file differ in detail, the specific rule file takes precedence.
 - Prefer module-oriented decisions over technical convenience.
-- Every new implementation choice should preserve the MVP scope defined here.
+- Preserve current business behavior unless the task explicitly changes the product rule.
 - Every new backend or frontend behavior must ship with unit tests in the same change.
+- Bug fixes must update tests when the current suite does not already protect the regression.
 - Changes are not complete until the relevant automated tests are updated and passing.
 
 ## Rule Index

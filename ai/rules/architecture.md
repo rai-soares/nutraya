@@ -2,78 +2,96 @@
 
 ## Application Model
 
-Nutraya must use a Next.js fullstack architecture for the initial MVP.
+Nutraya runs as a single Next.js fullstack application with App Router.
 
 This means:
 
 - one repository
-- one deployable web application
-- frontend and server capabilities kept in the same application boundary
+- one web application boundary
+- frontend pages and backend route handlers in the same codebase
+- shared domain modules used by both UI and server-side flows
 
-The MVP should remain monolithic and intentionally simple.
+The project should remain monolithic unless a real operational need proves otherwise.
 
 ## Organizational Principle
 
-Code organization must be driven by domain modules, not by isolated technical layers alone.
+Code organization must stay module-oriented.
 
-Prefer structures shaped around business areas such as:
+Primary domain modules currently include:
 
 - auth
-- users
-- patients
-- macros
-- meals
+- patient profile
+- macro goals
+- daily macro logs
+- meal plans
+- meal completions
 - chat
-- photos
+- meal substitutions
+- uploads
+- Gemini estimation
 
-Shared infrastructure may exist, but it must support modules rather than replace them.
+Shared code may live in `src/lib`, `src/modules/shared`, `src/modules/app-shell`, and `src/theme`, but shared layers must support the domain modules instead of replacing them.
 
-## Layering Convention
+## Route And Module Boundary
 
-Within each module, keep responsibilities clearly separated:
+Use this responsibility split:
 
-- UI
-- application logic
-- data access
-- external integrations
+- `src/app/*`: route handlers and page entry points
+- `src/modules/*`: domain services, types, APIs, and feature UI
+- `src/lib/*`: framework-agnostic infrastructure helpers such as auth enforcement, errors, crypto, Prisma access, and HTTP helpers
 
-These layers do not need heavy boilerplate, but business rules must not be mixed directly into rendering or persistence details.
+Route handlers should stay thin:
+
+- authenticate and authorize
+- parse and validate input
+- call a module service
+- map success or failure to HTTP responses
+
+Business rules should live in the module services, not inside route handlers or UI components.
+
+## Client And Server Conventions
+
+- Use React Query for client-side server-state flows.
+- Use module-local API clients for frontend access to route handlers.
+- Keep server logic in services that are testable without rendering UI.
+- Keep DTOs and validation rules close to the modules they belong to.
 
 ## Integration Boundaries
 
-External concerns such as storage and AI analysis must be introduced through simple internal interfaces.
+External providers are already integrated and must stay behind internal service boundaries:
 
-Examples:
+- JWT auth through auth services and `src/lib/auth.ts`
+- Cloudinary upload through the uploads module
+- Gemini image estimation through the Gemini and meal substitution estimation modules
 
-- image storage should not leak provider-specific logic into UI code
-- macro estimation should be called through an internal service boundary
+Do not leak provider-specific SDK logic into page components, feature components, or unrelated services.
 
-The purpose is to allow future replacement of providers without rewriting core flows.
+## Current Runtime Simplicity
 
-## Scalability Rule
+Prefer synchronous, easy-to-debug flows where they already exist.
 
-The architecture should be scalable by discipline, not by early distribution.
+Examples of current intentional simplicity:
 
-Do not introduce:
+- polling-based chat instead of websockets
+- direct API route handling instead of background workers
+- transactional Prisma updates instead of event-driven orchestration
+- immediate substitution estimation and progress application inside the request flow
 
-- microservices
-- event-driven orchestration
-- complex async pipelines
-- separate frontend and backend apps
-
-until the MVP proves a real need.
+Do not introduce microservices, queues, event buses, or distributed workflows unless correctness or scale clearly requires them.
 
 ## Decision Standard
 
-When there are multiple valid implementation options, prefer the one that:
+When multiple options are valid, prefer the one that:
 
-- keeps the module boundary clear
-- reduces setup and maintenance cost
-- is easy for future contributors to understand
-- does not expand the MVP scope
+- keeps module ownership clear
+- matches the patterns already used in the codebase
+- minimizes cognitive load for future contributors
+- keeps test coverage straightforward
+- preserves the current product boundaries unless a task explicitly expands them
 
 ## Quality Gate
 
-- new behavior must be accompanied by automated tests at the module boundary where the behavior lives
-- tests should stay close to the domain they protect and remain easy to understand
-- implementation convenience is not a reason to skip regression coverage
+- new behavior must be covered by automated tests close to the module or route where the behavior lives
+- route tests should protect authorization, validation, and response behavior
+- service tests should protect business rules and regression-prone logic
+- component tests should protect important user-facing states and interactions

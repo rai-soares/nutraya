@@ -2,85 +2,117 @@
 
 ## Backend Model
 
-Backend behavior must live inside the Next.js fullstack application and follow the product modules.
+Backend behavior lives inside the Next.js application through route handlers backed by domain services.
 
-Server-side implementation may use route handlers, server actions, or equivalent framework-native patterns, as long as module boundaries remain understandable.
+Current backend conventions are:
 
-## Module Coverage
+- bearer token authentication through JWT
+- role enforcement at the route boundary
+- input parsing and validation before service execution
+- Prisma for persistence
+- `AppError`-based domain and HTTP error handling
 
-The backend must support these domains:
+## Implemented Domain Coverage
 
+The backend currently supports these domains:
+
+- auth
 - users
 - nutritionist and patient relationship
 - macro goals
-- daily logs
-- meal plans
-- chat
-- meal photos
+- daily macro logs and progress
+- meal plans and meals
+- meal completions
+- chat conversations and messages
+- image uploads
+- meal substitutions
+- AI macro estimation
 
-Each domain should expose only the minimum operations needed for the MVP flows.
+New work should extend these modules directly unless a truly new domain is being introduced.
+
+## Auth And Authorization Rules
+
+- Registration and login produce role-aware users.
+- Authenticated API access requires a bearer token.
+- Authorization must remain explicit at the route or service boundary.
+- `NUTRI` and `PATIENT` permissions must stay clearly separated.
+- Nutritionist access to patient data must be restricted to linked patients.
 
 ## Domain Rules
 
-### Users
+### Users And Patient Linkage
 
-- support role-aware access for `NUTRI` and `PATIENT`
-- keep user records simple and focused on identity and access
-
-### Nutritionist and Patient Relationship
-
-- each patient must be associated with a nutritionist for MVP flows
-- relationship rules should be explicit and easy to query
+- The system currently supports only `NUTRI` and `PATIENT` roles.
+- A patient is currently linked to a single nutritionist.
+- Nutritionists can create or link patient access through the existing patient-profile flows.
 
 ### Macro Goals
 
-- macro goals are set intentionally, not inferred
-- the current goal state must be easy to retrieve for patient home
+- Macro goals are manually defined per patient.
+- There is at most one macro goal record per patient.
+- Goal retrieval must remain simple for patient progress screens.
 
-### Daily Logs
+### Daily Macro Logs
 
-- daily log data must support consumed totals by date
-- updates should preserve a clear daily progress view
+- Daily logs are keyed by patient and date.
+- Consumed totals are the source for progress calculations.
+- Daily logs may be created implicitly by other business actions such as meal completion or substitution application.
 
-### Meal Plans
+### Meal Plans And Meals
 
-- meal plans must be manageable without structured food composition
-- text-based meal descriptions are valid for the MVP
+- Meal plans belong to a patient and the responsible nutritionist.
+- Only one meal plan should be active per patient at a time.
+- Meals carry explicit macro values and display metadata such as order and optional scheduled time.
+
+### Meal Completions
+
+- Completing a meal currently increments the patient's daily consumed macros for that date.
+- Uncompleting a meal currently decrements those consumed values and clamps them at zero.
+- Meal completion is unique by patient, meal, and date.
 
 ### Chat
 
-- messages must be stored and retrieved by conversation context
-- realtime delivery is not required initially
+- Conversations are unique per patient and nutritionist pair.
+- Messages support `TEXT` and `IMAGE`.
+- Read state is stored on messages.
+- Chat is asynchronous and works with polling, not realtime transport.
 
-### Photos
+### Uploads
 
-- meal photos must support upload reference plus estimated macros
-- estimation can be synchronous at first if operationally simpler
+- Image uploads are currently validated by type and size before storage.
+- Cloudinary-specific logic must remain isolated in the uploads module.
 
-## Validation and Logic Separation
+### Meal Substitutions And AI Estimation
 
-- validate input at application boundaries
-- keep business rules outside persistence details
-- avoid placing domain decisions directly inside raw query code
+- A substitution request belongs to a patient, nutritionist, and meal.
+- Substitution requests require a valid image URL.
+- Estimation uses the existing AI service boundary and stores structured macro output.
+- Current creation flow estimates macros immediately.
+- Current creation flow applies estimated macros to the daily log automatically when estimation succeeds.
+- Nutritionist feedback is stored as part of the substitution review flow.
 
-Lightweight implementations are welcome, but domain behavior still needs explicit ownership.
+## Validation And Service Ownership
+
+- Validate external input at the application boundary with the module schemas already used in the project.
+- Keep domain behavior in services, not inline in route handlers.
+- Keep persistence code close to the service that owns the rule.
+- Prefer explicit service methods over generic repositories or abstraction layers that add little value.
 
 ## Testing Rule
 
-- every new backend module, service, route handler, and validation schema must include unit tests
-- tests must cover both success paths and the main failure paths
-- bug fixes must add or update tests that protect against regression
-- backend work is not complete until the relevant automated tests are passing
+- every new backend route, service, validation schema, and business rule change must include automated tests
+- tests must cover success paths and the main failure paths
+- authorization and ownership checks must be tested when relevant
+- bug fixes must add regression coverage if the failing path was not already protected
 
 ## Delivery Rule
 
-Implement synchronous, easy-to-debug flows first.
+Prefer flows that are easy to inspect and debug in the current monolith.
 
-Defer advanced patterns such as:
+Defer introducing these patterns unless they become necessary:
 
 - websocket chat
 - background job orchestration
-- complex retry systems
+- provider-specific logic spread across multiple modules
 - event buses
-
-unless they become necessary for correctness.
+- premature generic infrastructure around persistence or external APIs

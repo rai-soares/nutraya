@@ -1,92 +1,110 @@
 # Product Rules
 
-## MVP Scope
+## Current Product Scope
 
-Nutraya must ship first as a responsive web MVP focused on nutrition follow-up and daily adherence.
+Nutraya is no longer a planning-only MVP. The current repository already implements the first working version of the product and documentation must match the behavior that exists today.
 
-The MVP includes:
+The current scope includes:
 
-- nutritionist and patient users
-- patient assignment to a nutritionist
-- meal plan definition
-- macro goal definition
-- daily macro progress tracking
+- nutritionist and patient accounts
+- nutritionist-managed patient linking
+- macro goal management per patient
+- active meal plans with meal-level macros
+- patient daily macro progress
+- meal completion tracking by date
 - chat between nutritionist and patient
-- meal photo submission with estimated macros
-
-The MVP does not require:
-
-- food database modeling
-- realtime chat
-- advanced analytics
-- social features
-- automation-heavy backoffice workflows
+- image upload for chat and meal substitution flows
+- meal substitution requests based on patient meal photos
+- AI macro estimation for substitution photos
+- nutritionist feedback on substitution requests
 
 ## User Roles
 
-The product has exactly two roles in the MVP:
+The product currently has exactly two roles:
 
 - `NUTRI`
 - `PATIENT`
 
-Any authorization and UI branching should be based on these roles.
+Authorization, route protection, and UI branching must remain based on these roles.
 
 ## Primary Flows
 
 ### Nutritionist
 
-- create or manage patient access
-- define meal plans
-- define macro goals
-- review patient context
-- answer chat messages
-- review meal photos when needed
+- create or link patient access
+- view linked patients
+- open a patient detail view
+- define or update macro goals
+- create meal plans
+- activate one meal plan at a time per patient
+- create, edit, and remove meals inside the active plan
+- exchange text and image messages with linked patients
+- review substitution requests and save feedback
 
 ### Patient
 
-- view daily goals
-- view daily progress
-- view meal plan
-- send meal photos
-- exchange messages with the nutritionist
+- register and login
+- access a protected home screen
+- view macro goals, consumed macros, and remaining macros for the day
+- view the active meal plan and scheduled meals
+- mark meals as completed or uncompleted
+- request a meal substitution by sending a meal image
+- view AI estimation and nutritionist feedback for substitution requests
+- exchange text and image messages with the nutritionist
 
-## Minimum Screens
+## Active Screens
 
 ### Patient
 
+- Login
+- Register
 - Home
-- Diet
 - Chat
 
-Home must expose:
+Patient home currently prioritizes:
 
-- current macro goals
+- daily macro summary
 - consumed versus remaining progress
-- meal plan summary
-- primary action to send a photo
+- active meal plan context
+- meal checklist
+- substitution request flow
 
 ### Nutritionist
 
-- patient list
-- patient profile
-- meal plan editing
-- macro goal management
-- chat
+- Patient list
+- Patient detail
+- Chat
+- Substitution requests
 
-## MVP Simplification Rules
+The nutritionist flow is centered on managing linked patients rather than a separate analytics-heavy dashboard.
 
-- meal plan foods remain text-based in the MVP
-- macro goals are entered manually
-- AI estimation may be approximate
-- chat starts as standard request-response data flow
-- the system should prefer clarity over configurability
+## Product Behavior Rules
 
-## Success Criteria
+- Each patient is currently linked to one nutritionist.
+- Macro goals are manually entered and updated by the nutritionist.
+- Meal plans are patient-specific.
+- Only one meal plan should be active per patient at a time.
+- Daily progress is derived from the patient's macro goal and the consumed totals stored for a date.
+- Meal completion currently affects daily consumed macros automatically.
+- Meal substitution requests currently trigger image-based macro estimation immediately after creation.
+- Successful substitution creation currently applies the estimated macros to the patient's daily log automatically.
+- Nutritionist feedback is part of the substitution review flow.
+- Chat remains asynchronous and polling-based; realtime delivery is not part of the current product behavior.
 
-The MVP is successful if:
+## Current Simplifications
 
-- patients can understand and follow their daily macro goals
-- patients can log progress through the intended flows
-- patients use photo submission as part of the routine
-- patients and nutritionists can communicate continuously
-- nutritionists can guide and adjust care without needing external tools
+- Meals remain simple records with manual macros instead of a structured food database.
+- Chat works as a standard request-response flow with periodic refetching.
+- AI estimations are approximate and may include confidence and notes rather than exact nutrition analysis.
+- The product favors clear operational flows over configurable workflow engines.
+- Advanced analytics, backoffice automation, and multi-nutritionist ownership models are outside the current scope.
+
+## Success Criteria For Ongoing Work
+
+Changes are aligned with the product when they help preserve or improve these outcomes:
+
+- nutritionists can configure patient guidance without leaving the app
+- patients can understand the day plan and act on it quickly
+- consumed macro progress stays consistent with completed meals and applied substitutions
+- communication between nutritionist and patient remains simple and reliable
+- image-based substitution flows remain practical even with estimation uncertainty
