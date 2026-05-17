@@ -5,7 +5,8 @@ import { Box, type SxProps, type Theme } from "@mui/material";
 
 import { BRAND, type BrandLogoVariant } from "@/config/branding";
 
-type LogoVariant = Exclude<BrandLogoVariant, "tagline">;
+type RenderableLogoVariant = Exclude<BrandLogoVariant, "favicon">;
+type LogoVariant = Exclude<RenderableLogoVariant, "tagline">;
 
 type BrandLogoProps = {
   variant?: LogoVariant;
@@ -21,7 +22,7 @@ type BrandLogoProps = {
   className?: string;
 };
 
-const defaultHeights: Record<BrandLogoVariant, number> = {
+const defaultHeights: Record<RenderableLogoVariant, number> = {
   icon: 48,
   horizontal: 34,
   full: 56,
@@ -31,7 +32,7 @@ const defaultHeights: Record<BrandLogoVariant, number> = {
 function getResolvedVariant(
   variant: LogoVariant,
   showTagline: boolean | undefined,
-): BrandLogoVariant {
+): RenderableLogoVariant {
   if (showTagline && variant === "full") {
     return "tagline";
   }
@@ -39,7 +40,7 @@ function getResolvedVariant(
   return variant;
 }
 
-function getLogoAlt(variant: BrandLogoVariant) {
+function getLogoAlt(variant: RenderableLogoVariant) {
   if (variant === "icon") {
     return `${BRAND.name} icon`;
   }
@@ -57,7 +58,7 @@ function getDimensions({
   width,
   height,
 }: {
-  variant: BrandLogoVariant;
+  variant: RenderableLogoVariant;
   size?: number | string;
   width?: number | string;
   height?: number | string;
