@@ -15,6 +15,13 @@ export type NutritionistPatient = {
   patient: AppUser & { role: "PATIENT"; createdAt: string };
 };
 
+export type PatientProfileSummary = {
+  nutritionist: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 export type AuthResponse = {
   token: string;
   user: AppUser;

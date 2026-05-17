@@ -22,6 +22,13 @@ export type PatientProfileDto = {
   nutritionistId: string;
 };
 
+export type PatientNutritionistSummaryDto = {
+  nutritionist: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 export type LinkedPatientDto = {
   id: string;
   userId: string;

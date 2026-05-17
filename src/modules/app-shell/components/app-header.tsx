@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import RestaurantRoundedIcon from "@mui/icons-material/RestaurantRounded";
@@ -19,6 +20,7 @@ import {
 } from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
+import { getPatientProfileSummary } from "@/modules/patient-profile/patient-profile.api";
 import type { UserRole } from "@/modules/shared/types/api";
 
 type NavItem = {
@@ -55,6 +57,13 @@ export function AppHeader({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [firstName = "Usuário"] = session?.user.name?.split(" ") ?? [];
   const navItems = navItemsByRole[role];
+  const patientProfileQuery = useQuery({
+    queryKey: ["patient-profile-summary", session?.user.id],
+    enabled: role === "PATIENT" && Boolean(session?.token && session?.user.id),
+    queryFn: () => getPatientProfileSummary({ token: session?.token ?? "" }),
+  });
+  const nutritionistName =
+    role === "PATIENT" ? patientProfileQuery.data?.nutritionist?.name ?? null : null;
 
   const navigation = (
     <Stack
@@ -147,7 +156,7 @@ export function AppHeader({
               alignItems: "center",
               px: 1.25,
               py: 0.75,
-              borderRadius: 999,
+              borderRadius: 1,
               border: "1px solid rgba(18, 116, 107, 0.10)",
               backgroundColor: "rgba(255,255,255,0.76)",
               display: { xs: "none", sm: "flex" },
@@ -164,13 +173,15 @@ export function AppHeader({
             >
               {firstName.slice(0, 1).toUpperCase()}
             </Avatar>
-            <Stack spacing={0.5} sx={{ lineHeight: 1 }}>
+            <Stack spacing={0.25} sx={{ lineHeight: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {firstName}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {role === "PATIENT" ? "Paciente" : "Nutricionista"}
-              </Typography>
+              {nutritionistName ? (
+                <Typography variant="caption" color="text.secondary">
+                  <b>Nutricionista:</b> {nutritionistName}
+                </Typography>
+              ) : null}
             </Stack>
           </Stack>
 

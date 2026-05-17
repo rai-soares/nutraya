@@ -20,6 +20,7 @@ import {
   createOrLinkPatientForNutritionist,
   createPatientProfile,
   getLinkedPatientForNutritionist,
+  getPatientNutritionistSummaryByUserId,
   getPatientProfileByUserId,
   listPatientsForNutritionist,
 } from "@/modules/patient-profile/patient-profile.service";
@@ -109,6 +110,64 @@ describe("patient profile service", () => {
       },
     });
     expect(result?.id).toBe("profile-1");
+  });
+
+  it("returns the linked nutritionist summary for a patient", async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.patientProfile.findUnique.mockResolvedValueOnce({
+      nutritionist: {
+        id: "nutri-1",
+        name: "Dra. Paula",
+      },
+    });
+
+    const result = await getPatientNutritionistSummaryByUserId("patient-1");
+
+    expect(prismaMock.patientProfile.findUnique).toHaveBeenCalledWith({
+      where: { userId: "patient-1" },
+      select: {
+        nutritionist: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    expect(result).toEqual({
+      nutritionist: {
+        id: "nutri-1",
+        name: "Dra. Paula",
+      },
+    });
+  });
+
+  it("returns a null nutritionist summary when the patient is not linked yet", async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.patientProfile.findUnique.mockResolvedValueOnce(null);
+
+    const result = await getPatientNutritionistSummaryByUserId("patient-1");
+
+    expect(result).toEqual({
+      nutritionist: null,
+    });
+  });
+
+  it("rejects patient nutritionist summary lookup when the patient does not exist", async () => {
+    prismaMock.user.findUnique.mockResolvedValueOnce(null);
+
+    await expect(
+      getPatientNutritionistSummaryByUserId("patient-404"),
+    ).rejects.toMatchObject({
+      message: "Patient user not found.",
+      statusCode: 404,
+    });
   });
 
   it("lists linked patients for a nutritionist", async () => {

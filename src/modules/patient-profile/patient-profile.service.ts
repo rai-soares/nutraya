@@ -9,6 +9,7 @@ import type {
   CreatePatientProfileInput,
   CreatedNutritionistPatientDto,
   LinkedPatientDto,
+  PatientNutritionistSummaryDto,
   PatientProfileDto,
 } from "./patient-profile.types";
 
@@ -29,6 +30,15 @@ const linkedPatientSelect = {
       email: true,
       role: true,
       createdAt: true,
+    },
+  },
+} as const;
+
+const patientNutritionistSummarySelect = {
+  nutritionist: {
+    select: {
+      id: true,
+      name: true,
     },
   },
 } as const;
@@ -105,6 +115,28 @@ export async function getPatientProfileByUserId(
     where: { userId },
     select: patientProfileSelect,
   });
+}
+
+export async function getPatientNutritionistSummaryByUserId(
+  userId: string,
+): Promise<PatientNutritionistSummaryDto> {
+  const patient = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
+
+  if (!patient || patient.role !== UserRole.PATIENT) {
+    throw new AppError("Patient user not found.", 404);
+  }
+
+  const profile = await prisma.patientProfile.findUnique({
+    where: { userId },
+    select: patientNutritionistSummarySelect,
+  });
+
+  return {
+    nutritionist: profile?.nutritionist ?? null,
+  };
 }
 
 export async function listPatientsForNutritionist(
