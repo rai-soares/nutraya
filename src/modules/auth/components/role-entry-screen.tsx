@@ -30,7 +30,7 @@ export function RoleEntryScreen() {
       <Box className="w-full max-w-5xl">
         <Stack spacing={3}>
           <Stack spacing={1.5} className="max-w-2xl">
-            <BrandLogoTagline size={160} clickable href="/" alt="Nutraya" />
+            <BrandLogoTagline size={80} clickable href="/" alt="Nutraya" />
             <Typography variant="h1">Seu acesso comeca por aqui.</Typography>
             <Typography color="text.secondary">
               Escolha como deseja entrar para continuar com um fluxo pensado para sua rotina.
