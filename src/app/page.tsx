@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { RoleEntryScreen } from "@/modules/auth/components/role-entry-screen";
 import { AUTH_ROLE_COOKIE_KEY, getRoleHomePath } from "@/modules/auth/auth-storage";
 import type { UserRole } from "@/modules/shared/types/api";
 
@@ -12,5 +13,5 @@ export default async function Home() {
     redirect(getRoleHomePath(role));
   }
 
-  redirect("/login");
+  return <RoleEntryScreen />;
 }

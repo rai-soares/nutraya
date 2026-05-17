@@ -2,6 +2,7 @@ import type { AppUser, AuthResponse, UserRole } from "@/modules/shared/types/api
 
 export const AUTH_STORAGE_KEY = "nutraya.auth";
 export const AUTH_ROLE_COOKIE_KEY = "nutraya.role";
+export const LOGIN_ROLE_QUERY_KEY = "role";
 
 export type AuthSession = {
   token: string;
@@ -56,4 +57,12 @@ export function clearStoredSession(): void {
 
 export function getRoleHomePath(role: UserRole): string {
   return role === "NUTRI" ? "/nutritionist" : "/patient";
+}
+
+export function getLoginPath(role?: UserRole): string {
+  if (!role) {
+    return "/login";
+  }
+
+  return `/login?${LOGIN_ROLE_QUERY_KEY}=${role}`;
 }

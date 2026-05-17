@@ -18,9 +18,11 @@ type FormValues = {
 
 export function AuthFormCard({
   mode,
+  showRegisterLink = true,
   onSubmit,
 }: {
   mode: FormMode;
+  showRegisterLink?: boolean;
   onSubmit: (values: FormValues) => Promise<void>;
 }) {
   const {
@@ -128,17 +130,19 @@ export function AuthFormCard({
               </Button>
             </Stack>
 
-            <Typography color="text.secondary" variant="body2">
-              {isRegister ? "Já tem uma conta?" : "Precisa de uma conta?"}{" "}
-              <Typography
-                component={Link}
-                href={isRegister ? "/login" : "/register"}
-                color="primary.main"
-                sx={{ fontWeight: 700 }}
-              >
-                {isRegister ? "Entrar" : "Criar conta"}
+            {isRegister || showRegisterLink ? (
+              <Typography color="text.secondary" variant="body2">
+                {isRegister ? "Já tem uma conta?" : "Precisa de uma conta?"}{" "}
+                <Typography
+                  component={Link}
+                  href={isRegister ? "/login" : "/register"}
+                  color="primary.main"
+                  sx={{ fontWeight: 700 }}
+                >
+                  {isRegister ? "Entrar" : "Criar conta"}
+                </Typography>
               </Typography>
-            </Typography>
+            ) : null}
           </Stack>
         </AppCard>
       </Box>

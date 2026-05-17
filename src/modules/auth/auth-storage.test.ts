@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   AUTH_ROLE_COOKIE_KEY,
   clearStoredSession,
+  getLoginPath,
   getRoleHomePath,
   storeSession,
 } from "@/modules/auth/auth-storage";
@@ -21,6 +22,10 @@ describe("auth storage helpers", () => {
 
   it("returns the nutritionist home path", () => {
     expect(getRoleHomePath("NUTRI")).toBe("/nutritionist");
+  });
+
+  it("returns the login path for patients", () => {
+    expect(getLoginPath("PATIENT")).toBe("/login?role=PATIENT");
   });
 
   it("stores the role cookie with the session", () => {
