@@ -23,6 +23,7 @@ type MealChecklistItemProps = {
     appliedToDailyLog: boolean;
   } | null;
   isPending?: boolean;
+  isReadOnly?: boolean;
   onToggle: (mealId: string, completed: boolean) => void;
   onRequestSubstitution?: (mealId: string) => void;
   onViewSubstitutionRequest?: (substitutionId: string) => void;
@@ -32,6 +33,7 @@ export function MealChecklistItem({
   meal,
   substitutionRequest = null,
   isPending = false,
+  isReadOnly = false,
   onToggle,
   onRequestSubstitution,
   onViewSubstitutionRequest,
@@ -89,7 +91,7 @@ export function MealChecklistItem({
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
           <Button
             variant={meal.completed ? "outlined" : "contained"}
-            disabled={isPending}
+            disabled={isPending || isReadOnly}
             startIcon={
               meal.completed ? (
                 <CheckCircleRoundedIcon />
@@ -108,7 +110,7 @@ export function MealChecklistItem({
           {onRequestSubstitution ? (
             <Button
               variant="text"
-              disabled={isPending}
+              disabled={isPending || isReadOnly}
               onClick={() => onRequestSubstitution(meal.id)}
             >
               Solicitar substituição

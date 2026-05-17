@@ -1,11 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 import { useAuth } from "@/modules/auth/auth-context";
-import { AppCard } from "@/modules/app-shell/components/app-card";
 import { EmptyState } from "@/modules/app-shell/components/empty-state";
 import { ErrorState } from "@/modules/app-shell/components/error-state";
 import { ImagePreview } from "@/modules/app-shell/components/image-preview";
@@ -13,6 +24,7 @@ import { LoadingState } from "@/modules/app-shell/components/loading-state";
 import { MetricPill } from "@/modules/app-shell/components/metric-pill";
 import { PageHeader } from "@/modules/app-shell/components/page-header";
 import { SectionCard } from "@/modules/app-shell/components/section-card";
+import { uploadImage } from "@/modules/chat/chat.api";
 import { MacroSummaryGrid } from "@/modules/macros/components/macro-summary-grid";
 import {
   createPatientMealSubstitution,
@@ -21,27 +33,55 @@ import {
 import { MealSubstitutionEstimationPanel } from "@/modules/meal-substitutions/components/meal-substitution-estimation-panel";
 import { MealSubstitutionRequestDialog } from "@/modules/meal-substitutions/components/meal-substitution-request-dialog";
 import { MealChecklistItem } from "@/modules/meals/components/meal-checklist-item";
-import { uploadImage } from "@/modules/chat/chat.api";
 import { ApiClientError, apiClient } from "@/modules/shared/api/api-client";
 import type { DailyMacroProgress, MealSubstitution } from "@/modules/shared/types/api";
-import { formatFriendlyDate, getTodayIsoDate } from "@/modules/shared/utils/date";
+import {
+  formatFriendlyDate,
+  getTodayIsoDate,
+  resolveSelectableIsoDate,
+} from "@/modules/shared/utils/date";
 import { getErrorMessage } from "@/modules/shared/utils/pt-br";
 
+const PATIENT_DATE_QUERY_KEY = "date";
+
+function matchesSelectedDate(substitution: MealSubstitution, selectedDate: string) {
+  return (
+    substitution.applicationDate === selectedDate ||
+    substitution.createdAt.startsWith(selectedDate)
+  );
+}
+
 export function PatientHomeScreen() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { session } = useAuth();
-  const date = getTodayIsoDate();
+  const today = getTodayIsoDate();
+  const requestedDate = searchParams.get(PATIENT_DATE_QUERY_KEY);
+  const selectedDate = resolveSelectableIsoDate(requestedDate, today);
+  const isPastDate = selectedDate < today;
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
   const [selectedSubstitutionId, setSelectedSubstitutionId] = useState<string | null>(null);
   const token = session?.token ?? "";
   const authOptions = { token };
 
+  useEffect(() => {
+    if (requestedDate === selectedDate) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.set(PATIENT_DATE_QUERY_KEY, selectedDate);
+    router.replace(`${pathname}?${nextSearchParams.toString()}`);
+  }, [pathname, requestedDate, router, searchParams, selectedDate]);
+
   const progressQuery = useQuery({
-    queryKey: ["patient-progress", session?.user.id, date],
+    queryKey: ["patient-progress", session?.user.id, selectedDate],
     enabled: Boolean(token && session?.user.id),
     queryFn: () =>
       apiClient.get<DailyMacroProgress>(
-        `/api/daily-macro-logs/patient/${session?.user.id}/progress?date=${date}`,
+        `/api/daily-macro-logs/patient/${session?.user.id}/progress?date=${selectedDate}`,
         authOptions,
       ),
   });
@@ -67,7 +107,7 @@ export function PatientHomeScreen() {
       if (completed) {
         await apiClient.delete(
           "/api/patient/meal-completions",
-          { mealId, date },
+          { mealId, date: selectedDate },
           { token: session.token },
         );
         return;
@@ -75,13 +115,13 @@ export function PatientHomeScreen() {
 
       await apiClient.post(
         "/api/patient/meal-completions",
-        { mealId, date },
+        { mealId, date: selectedDate },
         { token: session.token },
       );
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["patient-progress", session?.user.id, date],
+        queryKey: ["patient-progress", session?.user.id, selectedDate],
       });
     },
   });
@@ -118,7 +158,7 @@ export function PatientHomeScreen() {
           queryKey: ["patient-meal-substitutions", session?.user.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["patient-progress", session?.user.id, date],
+          queryKey: ["patient-progress", session?.user.id, selectedDate],
         }),
       ]);
     },
@@ -136,17 +176,16 @@ export function PatientHomeScreen() {
   }, [progressQuery.data?.meals]);
 
   const latestSubstitutionByMealId = useMemo(() => {
-    return (substitutionsQuery.data ?? []).reduce<Record<string, MealSubstitution>>(
-      (accumulator, substitution) => {
+    return (substitutionsQuery.data ?? [])
+      .filter((substitution) => matchesSelectedDate(substitution, selectedDate))
+      .reduce<Record<string, MealSubstitution>>((accumulator, substitution) => {
         if (!accumulator[substitution.mealId]) {
           accumulator[substitution.mealId] = substitution;
         }
 
         return accumulator;
-      },
-      {},
-    );
-  }, [substitutionsQuery.data]);
+      }, {});
+  }, [selectedDate, substitutionsQuery.data]);
 
   const selectedMeal = useMemo(
     () => progressQuery.data?.meals.find((meal) => meal.id === selectedMealId) ?? null,
@@ -156,10 +195,27 @@ export function PatientHomeScreen() {
   const selectedSubstitution = useMemo(
     () =>
       (substitutionsQuery.data ?? []).find(
-        (substitution) => substitution.id === selectedSubstitutionId,
+        (substitution) =>
+          substitution.id === selectedSubstitutionId &&
+          matchesSelectedDate(substitution, selectedDate),
       ) ?? null,
-    [selectedSubstitutionId, substitutionsQuery.data],
+    [selectedDate, selectedSubstitutionId, substitutionsQuery.data],
   );
+
+  const selectedDateLabel = formatFriendlyDate(selectedDate);
+  const pageSubtitle = isPastDate
+    ? `Visualizando ${selectedDateLabel}. Este histórico fica disponível somente para consulta.`
+    : `Hoje é ${selectedDateLabel}.`;
+  const mealsTitle = isPastDate ? "Refeições do dia" : "Refeições de hoje";
+  const mealsDescription = isPastDate
+    ? "Confira o histórico das refeições e do progresso registrado nesta data."
+    : "Marque as refeições conforme concluir. O progresso do dia é recalculado a cada atualização.";
+  const emptyMealsTitle = isPastDate
+    ? "Nenhuma refeição encontrada para a data"
+    : "Nenhuma refeição cadastrada para hoje";
+  const emptyMealsDescription = isPastDate
+    ? "Não houve refeições registradas para a data selecionada no plano alimentar ativo."
+    : "Seu nutricionista ainda não adicionou refeições ao plano alimentar ativo.";
 
   const setupState = useMemo(() => {
     if (!(progressQuery.error instanceof ApiClientError) || progressQuery.error.status !== 404) {
@@ -236,7 +292,29 @@ export function PatientHomeScreen() {
       <PageHeader
         eyebrow="Acompanhamento diário"
         title={`Olá, ${session?.user.name?.split(" ")[0] ?? "paciente"}`}
-        subtitle={`Hoje é ${formatFriendlyDate(progressQuery.data.date)}.`}
+        subtitle={pageSubtitle}
+        action={
+          <TextField
+            label="Selecionar data"
+            type="date"
+            value={selectedDate}
+            onChange={(event) => {
+              const nextDate = resolveSelectableIsoDate(event.target.value, today);
+              const nextSearchParams = new URLSearchParams(searchParams.toString());
+              nextSearchParams.set(PATIENT_DATE_QUERY_KEY, nextDate);
+              router.replace(`${pathname}?${nextSearchParams.toString()}`);
+            }}
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
+              htmlInput: {
+                max: today,
+              },
+            }}
+            sx={{ minWidth: { xs: "100%", sm: 220 } }}
+          />
+        }
       />
 
       <SectionCard
@@ -247,8 +325,8 @@ export function PatientHomeScreen() {
       </SectionCard>
 
       <SectionCard
-        title="Refeições de hoje"
-        description="Marque as refeições conforme concluir. O progresso do dia é recalculado a cada atualização."
+        title={mealsTitle}
+        description={mealsDescription}
         action={
           <MetricPill
             label={`${completedSummary.completed} de ${completedSummary.total} concluídas`}
@@ -256,6 +334,12 @@ export function PatientHomeScreen() {
           />
         }
       >
+        {isPastDate ? (
+          <Alert severity="info">
+            Você está visualizando um dia anterior. Esse histórico é somente leitura.
+          </Alert>
+        ) : null}
+
         {mealMutation.isError ? (
           <Alert severity="error">
             {getErrorMessage(mealMutation.error, "Não foi possível salvar as alterações.")}
@@ -276,10 +360,7 @@ export function PatientHomeScreen() {
         ) : null}
 
         {progressQuery.data.meals.length === 0 ? (
-          <EmptyState
-            title="Nenhuma refeição cadastrada para hoje"
-            description="Seu nutricionista ainda não adicionou refeições ao plano alimentar ativo."
-          />
+          <EmptyState title={emptyMealsTitle} description={emptyMealsDescription} />
         ) : (
           <Stack spacing={2}>
             {progressQuery.data.meals.map((meal) => (
@@ -288,6 +369,7 @@ export function PatientHomeScreen() {
                 meal={meal}
                 substitutionRequest={latestSubstitutionByMealId[meal.id] ?? null}
                 isPending={mealMutation.isPending && mealMutation.variables?.mealId === meal.id}
+                isReadOnly={isPastDate}
                 onToggle={(mealId, completed) => {
                   mealMutation.mutate({ mealId, completed });
                 }}
@@ -303,7 +385,7 @@ export function PatientHomeScreen() {
         )}
       </SectionCard>
 
-      {selectedMeal ? (
+      {selectedMeal && !isPastDate ? (
         <MealSubstitutionRequestDialog
           mealName={selectedMeal.name}
           open
