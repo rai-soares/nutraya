@@ -110,7 +110,7 @@ export function ResetPasswordScreen() {
               </Button>
             </Stack>
 
-            <Typography color="text.secondary" variant="body2">
+            <Typography color="text.secondary" variant="body2" sx={{ alignSelf: "center" }}>
               <Typography component={Link} href="/login" color="primary.main" sx={{ fontWeight: 700 }}>
                 Voltar para entrar
               </Typography>

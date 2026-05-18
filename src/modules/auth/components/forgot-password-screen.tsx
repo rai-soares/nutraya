@@ -81,7 +81,7 @@ export function ForgotPasswordScreen() {
               </Button>
             </Stack>
 
-            <Typography color="text.secondary" variant="body2">
+            <Typography color="text.secondary" variant="body2" sx={{ alignSelf: "center" }}>
               Lembrou sua senha?{" "}
               <Typography component={Link} href="/login" color="primary.main" sx={{ fontWeight: 700 }}>
                 Voltar para entrar

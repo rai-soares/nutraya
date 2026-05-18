@@ -144,7 +144,7 @@ export function AuthFormCard({
             </Stack>
 
             {isRegister || showRegisterLink ? (
-              <Typography color="text.secondary" variant="body2">
+              <Typography color="text.secondary" variant="body2" sx={{ alignSelf: "center" }}>
                 {isRegister ? "Já tem uma conta?" : "Precisa de uma conta?"}{" "}
                 <Typography
                   component={Link}
