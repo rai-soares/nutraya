@@ -90,6 +90,10 @@ function formatMetricValue(metric: MetricKey, value: number) {
   return `${value} g`;
 }
 
+function resolveTooltipNumber(value: unknown) {
+  return typeof value === "number" ? value : 0;
+}
+
 function buildChartData(history: PatientProgressHistory["history"]) {
   return history.map((day) => ({
     date: day.date,
@@ -175,7 +179,10 @@ function HistoryLoadingState() {
           </Stack>
         </Stack>
       </AppCard>
-      <SectionCard title="Carregando histórico..." description="Estamos preparando sua evolução recente.">
+      <SectionCard
+        title="Carregando histórico..."
+        description="Estamos preparando sua evolução recente."
+      >
         <Skeleton variant="rounded" height={320} sx={{ borderRadius: 6 }} />
       </SectionCard>
     </Stack>
@@ -354,19 +361,27 @@ export function PatientHistoryScreen() {
             <Box sx={{ width: "100%", height: 320 }}>
               <ResponsiveContainer>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(18, 116, 107, 0.12)" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(18, 116, 107, 0.12)"
+                  />
                   <XAxis dataKey="shortDate" tickLine={false} axisLine={false} />
                   <YAxis tickLine={false} axisLine={false} width={52} />
                   <Tooltip
-                    formatter={(value: number, name: string) => {
+                    formatter={(value, name) => {
+                      const resolvedValue = resolveTooltipNumber(value);
+
                       if (name === "consumido") {
                         return [
-                          formatMetricValue(selectedMetric, value),
+                          formatMetricValue(selectedMetric, resolvedValue),
                           "Consumido",
                         ];
                       }
 
-                      return [formatMetricValue(selectedMetric, value), "Meta"];
+                      return [
+                        formatMetricValue(selectedMetric, resolvedValue),
+                        "Meta",
+                      ];
                     }}
                     labelFormatter={(_, payload) =>
                       payload?.[0]?.payload?.date
@@ -403,7 +418,10 @@ export function PatientHistoryScreen() {
             <Box sx={{ width: "100%", height: 280 }}>
               <ResponsiveContainer>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(18, 116, 107, 0.12)" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(18, 116, 107, 0.12)"
+                  />
                   <XAxis dataKey="shortDate" tickLine={false} axisLine={false} />
                   <YAxis
                     domain={[0, 100]}
@@ -413,7 +431,10 @@ export function PatientHistoryScreen() {
                     width={48}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value}%`, "Aderência"]}
+                    formatter={(value) => [
+                      `${resolveTooltipNumber(value)}%`,
+                      "Aderência",
+                    ]}
                     labelFormatter={(_, payload) =>
                       payload?.[0]?.payload?.date
                         ? formatHistoryDate(payload[0].payload.date)
@@ -506,10 +527,22 @@ function DailyHistoryCard({ day }: { day: PatientProgressHistoryDay }) {
           useFlexGap
           sx={{ flexWrap: "wrap" }}
         >
-          <MacroPill label="Calorias" value={`${day.calories.consumed}/${day.calories.goal} kcal`} />
-          <MacroPill label="Proteína" value={`${day.protein.consumed}/${day.protein.goal} g`} />
-          <MacroPill label="Carboidratos" value={`${day.carbs.consumed}/${day.carbs.goal} g`} />
-          <MacroPill label="Gorduras" value={`${day.fat.consumed}/${day.fat.goal} g`} />
+          <MacroPill
+            label="Calorias"
+            value={`${day.calories.consumed}/${day.calories.goal} kcal`}
+          />
+          <MacroPill
+            label="Proteína"
+            value={`${day.protein.consumed}/${day.protein.goal} g`}
+          />
+          <MacroPill
+            label="Carboidratos"
+            value={`${day.carbs.consumed}/${day.carbs.goal} g`}
+          />
+          <MacroPill
+            label="Gorduras"
+            value={`${day.fat.consumed}/${day.fat.goal} g`}
+          />
         </Stack>
       </Stack>
     </AppCard>
