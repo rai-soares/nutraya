@@ -48,58 +48,70 @@ export function ChatMessageThread({
         backgroundColor: "rgba(255,255,255,0.84)",
       }}
     >
-      <Stack spacing={2}>
-        {messages.map((message) => {
-          const isOwnMessage = message.senderId === currentUserId;
-          const participant = isOwnMessage
-            ? currentUserId === patient.id
-              ? patient
-              : nutritionist
-            : currentUserId === patient.id
-              ? nutritionist
-              : patient;
+      <Box
+        data-testid="chat-message-scroll-container"
+        sx={{
+          maxHeight: {
+            xs: "55vh",
+            md: "32rem",
+          },
+          overflowY: "auto",
+          pr: 1,
+        }}
+      >
+        <Stack spacing={2}>
+          {messages.map((message) => {
+            const isOwnMessage = message.senderId === currentUserId;
+            const participant = isOwnMessage
+              ? currentUserId === patient.id
+                ? patient
+                : nutritionist
+              : currentUserId === patient.id
+                ? nutritionist
+                : patient;
 
-          return (
-            <ChatBubble
-              key={message.id}
-              align={isOwnMessage ? "end" : "start"}
-              name={isOwnMessage ? "Você" : participant.name}
-              time={formatMessageTime(message.createdAt)}
-              avatarLabel={participant.name.slice(0, 1).toUpperCase()}
-              footer={
-                isOwnMessage ? (
-                  <Chip
-                    label={message.readAt ? "Lida" : "Enviada"}
-                    size="small"
-                    sx={{
-                      alignSelf: "flex-end",
-                      backgroundColor: message.readAt
-                        ? "rgba(255,255,255,0.18)"
-                        : "rgba(255,255,255,0.1)",
-                      color: "inherit",
-                    }}
+            return (
+              <ChatBubble
+                key={message.id}
+                align={isOwnMessage ? "end" : "start"}
+                name={isOwnMessage ? "Voc\u00ea" : participant.name}
+                time={formatMessageTime(message.createdAt)}
+                avatarLabel={participant.name.slice(0, 1).toUpperCase()}
+                footer={
+                  isOwnMessage ? (
+                    <Chip
+                      label={message.readAt ? "Lida" : "Enviada"}
+                      size="small"
+                      sx={{
+                        alignSelf: "flex-end",
+                        backgroundColor: message.readAt
+                          ? "rgba(255,255,255,0.18)"
+                          : "rgba(255,255,255,0.1)",
+                        color: "inherit",
+                      }}
+                    />
+                  ) : null
+                }
+              >
+                {message.messageType === "IMAGE" && message.imageUrl ? (
+                  <ImagePreview
+                    src={message.imageUrl}
+                    alt="Imagem do chat"
+                    maxHeight={320}
+                    onClick={() => setPreviewImage(message.imageUrl)}
                   />
-                ) : null
-              }
-            >
-              {message.messageType === "IMAGE" && message.imageUrl ? (
-                <ImagePreview
-                  src={message.imageUrl}
-                  alt="Imagem do chat"
-                  maxHeight={320}
-                  onClick={() => setPreviewImage(message.imageUrl)}
-                />
-              ) : null}
+                ) : null}
 
-              {message.text ? (
-                <Typography sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                  {message.text}
-                </Typography>
-              ) : null}
-            </ChatBubble>
-          );
-        })}
-      </Stack>
+                {message.text ? (
+                  <Typography sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                    {message.text}
+                  </Typography>
+                ) : null}
+              </ChatBubble>
+            );
+          })}
+        </Stack>
+      </Box>
 
       <Dialog open={Boolean(previewImage)} onClose={() => setPreviewImage(null)} maxWidth="md" fullWidth>
         <DialogContent sx={{ p: 1.5 }}>
