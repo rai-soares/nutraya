@@ -33,6 +33,7 @@ type NavItem = {
 const navItemsByRole: Record<UserRole, NavItem[]> = {
   PATIENT: [
     { href: "/patient", label: "Progresso" },
+    { href: "/patient/history", label: "Histórico" },
     { href: "/patient/chat", label: "Chat" },
   ],
   NUTRI: [

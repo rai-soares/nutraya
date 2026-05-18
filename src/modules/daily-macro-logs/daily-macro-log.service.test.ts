@@ -9,6 +9,7 @@ vi.mock("@/lib/prisma", () => ({
 
 import {
   assertNutritionistCanViewPatient,
+  getPatientProgressHistory,
   getPatientProgressByDate,
   getTodayDateOnly,
   getTodayDailyMacroLog,
@@ -288,6 +289,190 @@ describe("daily macro log service", () => {
     });
   });
 
+  it("aggregates patient progress history by day", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValue({
+      calories: 2000,
+      protein: 160,
+      carbs: 220,
+      fat: 70,
+    });
+    prismaMock.dailyMacroLog.findMany.mockResolvedValue([
+      {
+        date: new Date("2026-05-15T00:00:00.000Z"),
+        caloriesConsumed: 1800,
+        proteinConsumed: 150,
+        carbsConsumed: 200,
+        fatConsumed: 60,
+      },
+      {
+        date: new Date("2026-05-17T00:00:00.000Z"),
+        caloriesConsumed: 2200,
+        proteinConsumed: 180,
+        carbsConsumed: 240,
+        fatConsumed: 90,
+      },
+    ]);
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      meals: [{ id: "meal-1" }, { id: "meal-2" }, { id: "meal-3" }],
+    });
+    prismaMock.mealCompletion.findMany.mockResolvedValue([
+      {
+        date: new Date("2026-05-15T00:00:00.000Z"),
+        mealId: "meal-1",
+      },
+      {
+        date: new Date("2026-05-15T00:00:00.000Z"),
+        mealId: "meal-2",
+      },
+      {
+        date: new Date("2026-05-17T00:00:00.000Z"),
+        mealId: "meal-1",
+      },
+      {
+        date: new Date("2026-05-17T00:00:00.000Z"),
+        mealId: "meal-2",
+      },
+      {
+        date: new Date("2026-05-17T00:00:00.000Z"),
+        mealId: "meal-3",
+      },
+    ]);
+
+    const result = await getPatientProgressHistory(
+      "patient-1",
+      7,
+      new Date("2026-05-17T12:00:00.000Z"),
+    );
+
+    expect(prismaMock.dailyMacroLog.findMany).toHaveBeenCalledWith({
+      where: {
+        patientId: "patient-1",
+        date: {
+          gte: new Date("2026-05-11T00:00:00.000Z"),
+          lte: new Date("2026-05-17T00:00:00.000Z"),
+        },
+      },
+      select: {
+        date: true,
+        caloriesConsumed: true,
+        proteinConsumed: true,
+        carbsConsumed: true,
+        fatConsumed: true,
+      },
+      orderBy: {
+        date: "asc",
+      },
+    });
+    expect(result.summary).toEqual({
+      averageAdherence: 89,
+      daysTracked: 2,
+      completedMeals: 5,
+      totalMeals: 21,
+    });
+    expect(result.history).toHaveLength(7);
+    expect(result.history[4]).toEqual({
+      date: "2026-05-15",
+      calories: {
+        consumed: 1800,
+        goal: 2000,
+      },
+      protein: {
+        consumed: 150,
+        goal: 160,
+      },
+      carbs: {
+        consumed: 200,
+        goal: 220,
+      },
+      fat: {
+        consumed: 60,
+        goal: 70,
+      },
+      completedMeals: 2,
+      totalMeals: 3,
+      adherencePercentage: 78,
+    });
+    expect(result.history[6]).toEqual({
+      date: "2026-05-17",
+      calories: {
+        consumed: 2200,
+        goal: 2000,
+      },
+      protein: {
+        consumed: 180,
+        goal: 160,
+      },
+      carbs: {
+        consumed: 240,
+        goal: 220,
+      },
+      fat: {
+        consumed: 90,
+        goal: 70,
+      },
+      completedMeals: 3,
+      totalMeals: 3,
+      adherencePercentage: 100,
+    });
+  });
+
+  it("returns empty tracked history when the patient has no entries yet", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValue({
+      calories: 2000,
+      protein: 160,
+      carbs: 220,
+      fat: 70,
+    });
+    prismaMock.dailyMacroLog.findMany.mockResolvedValue([]);
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      meals: [{ id: "meal-1" }, { id: "meal-2" }],
+    });
+    prismaMock.mealCompletion.findMany.mockResolvedValue([]);
+
+    const result = await getPatientProgressHistory(
+      "patient-1",
+      7,
+      new Date("2026-05-17T12:00:00.000Z"),
+    );
+
+    expect(result.summary).toEqual({
+      averageAdherence: 0,
+      daysTracked: 0,
+      completedMeals: 0,
+      totalMeals: 14,
+    });
+    expect(result.history[0]).toEqual({
+      date: "2026-05-11",
+      calories: {
+        consumed: 0,
+        goal: 2000,
+      },
+      protein: {
+        consumed: 0,
+        goal: 160,
+      },
+      carbs: {
+        consumed: 0,
+        goal: 220,
+      },
+      fat: {
+        consumed: 0,
+        goal: 70,
+      },
+      completedMeals: 0,
+      totalMeals: 2,
+      adherencePercentage: 0,
+    });
+  });
+
   it("fails progress calculation when the macro goal does not exist", async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: "patient-1",
@@ -361,6 +546,29 @@ describe("daily macro log service", () => {
     ).rejects.toMatchObject({
       message: "Insufficient permissions.",
       statusCode: 403,
+    });
+  });
+
+  it("fails history calculation when the macro goal does not exist", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "patient-1",
+      role: UserRole.PATIENT,
+    });
+    prismaMock.macroGoal.findUnique.mockResolvedValue(null);
+    prismaMock.dailyMacroLog.findMany.mockResolvedValue([]);
+    prismaMock.mealPlan.findFirst.mockResolvedValue({
+      meals: [],
+    });
+
+    await expect(
+      getPatientProgressHistory(
+        "patient-1",
+        30,
+        new Date("2026-05-17T12:00:00.000Z"),
+      ),
+    ).rejects.toMatchObject({
+      message: "Macro goal not found.",
+      statusCode: 404,
     });
   });
 });

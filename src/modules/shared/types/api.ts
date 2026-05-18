@@ -150,6 +150,40 @@ export type DailyMacroProgress = {
   completedMealIds: string[];
 };
 
+export type PatientProgressHistoryDay = {
+  date: string;
+  calories: {
+    consumed: number;
+    goal: number;
+  };
+  protein: {
+    consumed: number;
+    goal: number;
+  };
+  carbs: {
+    consumed: number;
+    goal: number;
+  };
+  fat: {
+    consumed: number;
+    goal: number;
+  };
+  completedMeals: number;
+  totalMeals: number;
+  adherencePercentage: number;
+};
+
+export type PatientProgressHistory = {
+  range: 7 | 30 | 90;
+  summary: {
+    averageAdherence: number;
+    daysTracked: number;
+    completedMeals: number;
+    totalMeals: number;
+  };
+  history: PatientProgressHistoryDay[];
+};
+
 export type MealPlan = {
   id: string;
   patientId: string;

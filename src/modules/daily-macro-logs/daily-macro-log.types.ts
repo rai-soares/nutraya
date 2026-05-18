@@ -17,11 +17,20 @@ export const dailyMacroLogDateQuerySchema = z.object({
   date: isoDateSchema,
 });
 
+export const progressHistoryRangeSchema = z
+  .coerce
+  .number()
+  .int()
+  .refine((value) => [7, 30, 90].includes(value), {
+    message: "Range must be 7, 30, or 90.",
+  });
+
 export type UpsertTodayDailyMacroLogInput = z.infer<
   typeof upsertTodayDailyMacroLogSchema
 >;
 
 export type DailyMacroLogDateQuery = z.infer<typeof dailyMacroLogDateQuerySchema>;
+export type ProgressHistoryRange = z.infer<typeof progressHistoryRangeSchema>;
 
 export type DailyMacroLogDto = {
   id: string;
@@ -78,4 +87,38 @@ export type DailyMacroProgressDto = {
     completed: boolean;
   }>;
   completedMealIds: string[];
+};
+
+export type PatientProgressHistoryDayDto = {
+  date: string;
+  calories: {
+    consumed: number;
+    goal: number;
+  };
+  protein: {
+    consumed: number;
+    goal: number;
+  };
+  carbs: {
+    consumed: number;
+    goal: number;
+  };
+  fat: {
+    consumed: number;
+    goal: number;
+  };
+  completedMeals: number;
+  totalMeals: number;
+  adherencePercentage: number;
+};
+
+export type PatientProgressHistoryDto = {
+  range: ProgressHistoryRange;
+  summary: {
+    averageAdherence: number;
+    daysTracked: number;
+    completedMeals: number;
+    totalMeals: number;
+  };
+  history: PatientProgressHistoryDayDto[];
 };
